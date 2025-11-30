@@ -12,6 +12,7 @@ on:
       - 'Dockerfile'
       - 'chunked_output/**'
       - 'case_id_to_s3_mapping.json'
+      - '.github/workflows/backend-cicd.yml'
   workflow_dispatch:
 
 env:
