@@ -27,12 +27,14 @@ jobs:
         node-version: '18'
 
     - name: Build React App
+      shell: bash
       run: |
         cd frontend
         npm install
         npm run build
 
     - name: Build and Push to ACR
+      shell: bash
       run: |
         cd frontend
         az acr build --registry ${{ env.ACR_NAME }} \
@@ -42,6 +44,7 @@ jobs:
           .
 
     - name: Get AKS Credentials
+      shell: bash
       run: |
         az aks get-credentials \
           --resource-group ${{ env.RESOURCE_GROUP }} \
@@ -49,6 +52,7 @@ jobs:
           --overwrite-existing
 
     - name: Deploy to AKS
+      shell: bash
       run: |
         kubectl set image deployment/legal-rag-frontend \
           frontend=${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
