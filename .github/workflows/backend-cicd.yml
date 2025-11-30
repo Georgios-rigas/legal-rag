@@ -30,26 +30,26 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Build and Push to ACR
-      shell: bash
+      shell: pwsh
       run: |
-        az acr build --registry ${{ env.ACR_NAME }} \
-          --image ${{ env.IMAGE_NAME }}:${{ github.sha }} \
-          --image ${{ env.IMAGE_NAME }}:latest \
-          --file Dockerfile \
+        az acr build --registry ${{ env.ACR_NAME }} `
+          --image ${{ env.IMAGE_NAME }}:${{ github.sha }} `
+          --image ${{ env.IMAGE_NAME }}:latest `
+          --file Dockerfile `
           .
 
     - name: Get AKS Credentials
-      shell: bash
+      shell: pwsh
       run: |
-        az aks get-credentials \
-          --resource-group ${{ env.RESOURCE_GROUP }} \
-          --name ${{ env.AKS_CLUSTER }} \
+        az aks get-credentials `
+          --resource-group ${{ env.RESOURCE_GROUP }} `
+          --name ${{ env.AKS_CLUSTER }} `
           --overwrite-existing
 
     - name: Deploy to AKS
-      shell: bash
+      shell: pwsh
       run: |
-        kubectl set image deployment/legal-rag-api \
+        kubectl set image deployment/legal-rag-api `
           api=${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
         kubectl rollout status deployment/legal-rag-api

@@ -28,34 +28,34 @@ jobs:
         node-version: '18'
 
     - name: Build React App
-      shell: bash
+      shell: pwsh
       run: |
         cd frontend
         npm install
         npm run build
 
     - name: Build and Push to ACR
-      shell: bash
+      shell: pwsh
       run: |
         cd frontend
-        az acr build --registry ${{ env.ACR_NAME }} \
-          --image ${{ env.IMAGE_NAME }}:${{ github.sha }} \
-          --image ${{ env.IMAGE_NAME }}:latest \
-          --file Dockerfile.simple \
+        az acr build --registry ${{ env.ACR_NAME }} `
+          --image ${{ env.IMAGE_NAME }}:${{ github.sha }} `
+          --image ${{ env.IMAGE_NAME }}:latest `
+          --file Dockerfile.simple `
           .
 
     - name: Get AKS Credentials
-      shell: bash
+      shell: pwsh
       run: |
-        az aks get-credentials \
-          --resource-group ${{ env.RESOURCE_GROUP }} \
-          --name ${{ env.AKS_CLUSTER }} \
+        az aks get-credentials `
+          --resource-group ${{ env.RESOURCE_GROUP }} `
+          --name ${{ env.AKS_CLUSTER }} `
           --overwrite-existing
 
     - name: Deploy to AKS
-      shell: bash
+      shell: pwsh
       run: |
-        kubectl set image deployment/legal-rag-frontend \
+        kubectl set image deployment/legal-rag-frontend `
           frontend=${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
         kubectl rollout status deployment/legal-rag-frontend
