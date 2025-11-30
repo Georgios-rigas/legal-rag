@@ -37,6 +37,8 @@ jobs:
     - name: Build and Push to ACR
       shell: powershell
       run: |
+        $OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+        [Console]::InputEncoding = [System.Text.Encoding]::UTF8
         cd frontend
         az acr build --registry ${{ env.ACR_NAME }} `
           --image ${{ env.IMAGE_NAME }}:${{ github.sha }} `
