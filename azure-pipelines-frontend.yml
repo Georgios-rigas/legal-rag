@@ -1,0 +1,82 @@
+# Azure DevOps CI/CD Pipeline for Legal RAG Frontend
+
+trigger:
+  branches:
+    include:
+    - main
+  paths:
+    include:
+    - frontend/**
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  acrName: 'legalragacr'
+  acrLoginServer: 'legalragacr.azurecr.io'
+  imageName: 'legal-rag-frontend'
+  kubernetesNamespace: 'default'
+  deploymentName: 'legal-rag-frontend'
+
+stages:
+- stage: Build
+  displayName: 'Build Frontend and Docker Image'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build and Push'
+    steps:
+    - task: NodeTool@0
+      displayName: 'Install Node.js'
+      inputs:
+        versionSpec: '18.x'
+
+    - script: |
+        cd frontend
+        npm install
+        npm run build
+      displayName: 'Build React App'
+
+    - task: Docker@2
+      displayName: 'Build Docker Image'
+      inputs:
+        containerRegistry: 'ACR-Connection'
+        repository: '$(imageName)'
+        command: 'build'
+        Dockerfile: 'frontend/Dockerfile.simple'
+        context: 'frontend'
+        tags: |
+          $(Build.BuildId)
+          latest
+
+    - task: Docker@2
+      displayName: 'Push Docker Image to ACR'
+      inputs:
+        containerRegistry: 'ACR-Connection'
+        repository: '$(imageName)'
+        command: 'push'
+        tags: |
+          $(Build.BuildId)
+          latest
+
+- stage: Deploy
+  displayName: 'Deploy to AKS'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - deployment: DeployJob
+    displayName: 'Deploy to Kubernetes'
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: KubernetesManifest@0
+            displayName: 'Deploy to AKS'
+            inputs:
+              action: 'deploy'
+              kubernetesServiceConnection: 'AKS-Connection'
+              namespace: '$(kubernetesNamespace)'
+              manifests: |
+                k8s-frontend-deployment.yaml
+              containers: |
+                $(acrLoginServer)/$(imageName):$(Build.BuildId)

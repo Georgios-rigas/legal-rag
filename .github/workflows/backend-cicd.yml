@@ -1,0 +1,56 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'api.py'
+      - 'query_rag.py'
+      - 'config.py'
+      - 'pdf_generator.py'
+      - 'requirements.txt'
+      - 'Dockerfile'
+      - 'chunked_output/**'
+      - 'case_id_to_s3_mapping.json'
+  workflow_dispatch:
+
+env:
+  ACR_NAME: legalragacr
+  IMAGE_NAME: legal-rag-api
+  RESOURCE_GROUP: legal-rag-rg
+  AKS_CLUSTER: legal-rag-aks
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Build and Push to ACR
+      run: |
+        az acr build --registry ${{ env.ACR_NAME }} \
+          --image ${{ env.IMAGE_NAME }}:${{ github.sha }} \
+          --image ${{ env.IMAGE_NAME }}:latest \
+          --file Dockerfile \
+          .
+
+    - name: Get AKS Credentials
+      run: |
+        az aks get-credentials \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --name ${{ env.AKS_CLUSTER }} \
+          --overwrite-existing
+
+    - name: Deploy to AKS
+      run: |
+        kubectl set image deployment/legal-rag-api \
+          api=${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+        kubectl rollout status deployment/legal-rag-api

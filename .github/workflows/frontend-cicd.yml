@@ -1,0 +1,61 @@
+name: Frontend CI/CD
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'frontend/**'
+  workflow_dispatch:
+
+env:
+  ACR_NAME: legalragacr
+  IMAGE_NAME: legal-rag-frontend
+  RESOURCE_GROUP: legal-rag-rg
+  AKS_CLUSTER: legal-rag-aks
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Build React App
+      run: |
+        cd frontend
+        npm install
+        npm run build
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Build and Push to ACR
+      run: |
+        cd frontend
+        az acr build --registry ${{ env.ACR_NAME }} \
+          --image ${{ env.IMAGE_NAME }}:${{ github.sha }} \
+          --image ${{ env.IMAGE_NAME }}:latest \
+          --file Dockerfile.simple \
+          .
+
+    - name: Get AKS Credentials
+      run: |
+        az aks get-credentials \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --name ${{ env.AKS_CLUSTER }} \
+          --overwrite-existing
+
+    - name: Deploy to AKS
+      run: |
+        kubectl set image deployment/legal-rag-frontend \
+          frontend=${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+        kubectl rollout status deployment/legal-rag-frontend

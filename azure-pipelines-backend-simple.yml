@@ -1,0 +1,78 @@
+# Simple Azure DevOps Pipeline - No Service Connection Required
+# Uses Azure CLI login with credentials from pipeline variables
+
+trigger:
+  branches:
+    include:
+    - master
+    - main
+  paths:
+    include:
+    - api.py
+    - query_rag.py
+    - config.py
+    - pdf_generator.py
+    - requirements.txt
+    - Dockerfile
+    - chunked_output/*
+    - case_id_to_s3_mapping.json
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  acrName: 'legalragacr'
+  imageName: 'legal-rag-api'
+  resourceGroup: 'legal-rag-rg'
+  aksCluster: 'legal-rag-aks'
+
+stages:
+- stage: Build
+  displayName: 'Build and Push Docker Image'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build Docker Image with ACR'
+    steps:
+    - bash: |
+        # Login to Azure using service principal from variables
+        az login --service-principal \
+          -u $(AZURE_CLIENT_ID) \
+          -p $(AZURE_CLIENT_SECRET) \
+          --tenant $(AZURE_TENANT_ID)
+
+        # Build and push to ACR
+        az acr build --registry $(acrName) \
+          --image $(imageName):$(Build.BuildId) \
+          --image $(imageName):latest \
+          --file Dockerfile \
+          .
+      displayName: 'Build and Push to ACR'
+
+- stage: Deploy
+  displayName: 'Deploy to AKS'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: DeployJob
+    displayName: 'Deploy to Kubernetes'
+    steps:
+    - bash: |
+        # Login to Azure
+        az login --service-principal \
+          -u $(AZURE_CLIENT_ID) \
+          -p $(AZURE_CLIENT_SECRET) \
+          --tenant $(AZURE_TENANT_ID)
+
+        # Get AKS credentials
+        az aks get-credentials \
+          --resource-group $(resourceGroup) \
+          --name $(aksCluster) \
+          --overwrite-existing
+
+        # Update deployment
+        kubectl set image deployment/legal-rag-api \
+          api=$(acrName).azurecr.io/$(imageName):$(Build.BuildId)
+
+        # Wait for rollout
+        kubectl rollout status deployment/legal-rag-api
+      displayName: 'Deploy to AKS'

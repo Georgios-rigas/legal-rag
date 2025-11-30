@@ -1,0 +1,9 @@
+boto3==1.41.5
+pinecone==8.0.0
+anthropic
+openai
+sentence-transformers
+fastapi
+uvicorn
+python-dotenv
+reportlab
