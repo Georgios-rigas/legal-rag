@@ -7,7 +7,6 @@ from typing import List, Dict
 from pinecone import Pinecone
 from openai import OpenAI
 from anthropic import Anthropic
-from sentence_transformers import SentenceTransformer
 import config
 
 
@@ -23,6 +22,7 @@ class LegalRAG:
             self.openai_client = OpenAI(api_key=config.OPENAI_API_KEY)
             print(f"Using OpenAI embeddings ({config.OPENAI_EMBEDDING_MODEL})")
         else:
+            from sentence_transformers import SentenceTransformer
             self.embedding_model = SentenceTransformer(config.LOCAL_EMBEDDING_MODEL)
             print(f"Using local embeddings ({config.LOCAL_EMBEDDING_MODEL})")
 
