@@ -201,3 +201,4 @@ stages:
 
                 # Show pod status
                 kubectl get pods -l app=legal-rag-api
+# Trigger pipeline
