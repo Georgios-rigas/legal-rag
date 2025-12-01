@@ -34,6 +34,15 @@ stages:
     displayName: 'Build and Push Image'
     timeoutInMinutes: 180  # 3 hours timeout
     steps:
+    - task: PowerShell@2
+      displayName: 'Clean Docker Cache'
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "Cleaning Docker cache to free memory..."
+          docker system prune -f
+          Write-Host "Docker cleanup complete"
+
     - task: AzureCLI@2
       displayName: 'Login to ACR'
       inputs:
@@ -55,38 +64,55 @@ stages:
         arguments: '-t $(acrName).azurecr.io/$(imageName):$(Build.BuildId) -t $(acrName).azurecr.io/$(imageName):latest'
 
     - task: AzureCLI@2
-      displayName: 'Push to ACR'
+      displayName: 'Push Build ID Tag to ACR'
       timeoutInMinutes: 120  # 2 hours for push
       inputs:
         azureSubscription: '$(azureSubscription)'
         scriptType: 'ps'
         scriptLocation: 'inlineScript'
         inlineScript: |
-          $ErrorActionPreference = "Stop"
+          $ErrorActionPreference = "Continue"
 
-          # Push with retry logic
-          $maxRetries = 3
-          $retryCount = 0
-          $success = $false
+          Write-Host "Starting push of tag $(Build.BuildId)..."
+          Write-Host "This may take a long time for large images. Please be patient."
 
-          while (-not $success -and $retryCount -lt $maxRetries) {
-            try {
-              Write-Host "Attempt $($retryCount + 1) of $maxRetries..."
-              docker push $(acrName).azurecr.io/$(imageName):$(Build.BuildId)
-              $success = $true
-              Write-Host "Successfully pushed tag $(Build.BuildId)"
-            } catch {
-              $retryCount++
-              if ($retryCount -lt $maxRetries) {
-                Write-Host "Push failed, retrying in 10 seconds..."
-                Start-Sleep -Seconds 10
-              } else {
-                throw "Failed to push after $maxRetries attempts"
-              }
-            }
+          # Push with timeout handling
+          $job = Start-Job -ScriptBlock {
+            docker push legalragpersonalacr.azurecr.io/legal-rag-api:$using:env:BUILD_BUILDID 2>&1
           }
 
-          # Push latest tag (reuses layers from previous push)
+          $timeout = 7200  # 2 hours in seconds
+          $elapsed = 0
+          $reportInterval = 60  # Report every minute
+
+          while ($job.State -eq 'Running' -and $elapsed -lt $timeout) {
+            Start-Sleep -Seconds $reportInterval
+            $elapsed += $reportInterval
+            $minutes = [math]::Round($elapsed / 60, 1)
+            Write-Host "Still pushing... ($minutes minutes elapsed)"
+          }
+
+          if ($job.State -eq 'Running') {
+            Stop-Job $job
+            Remove-Job $job
+            throw "Push timed out after $($timeout/60) minutes"
+          }
+
+          $result = Receive-Job $job
+          Remove-Job $job
+
+          Write-Host $result
+          Write-Host "Successfully pushed tag $(Build.BuildId)"
+
+    - task: AzureCLI@2
+      displayName: 'Push Latest Tag to ACR'
+      timeoutInMinutes: 30  # Latest should be faster since layers exist
+      inputs:
+        azureSubscription: '$(azureSubscription)'
+        scriptType: 'ps'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          Write-Host "Pushing latest tag (reusing layers from previous push)..."
           docker push $(acrName).azurecr.io/$(imageName):latest
 
 - stage: Deploy
