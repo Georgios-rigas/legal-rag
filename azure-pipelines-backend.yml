@@ -37,7 +37,7 @@ stages:
       displayName: 'Login to ACR'
       inputs:
         azureSubscription: '$(azureSubscription)'
-        scriptType: 'pscore'
+        scriptType: 'ps'
         scriptLocation: 'inlineScript'
         inlineScript: |
           chcp 65001
@@ -57,7 +57,7 @@ stages:
       displayName: 'Push to ACR'
       inputs:
         azureSubscription: '$(azureSubscription)'
-        scriptType: 'pscore'
+        scriptType: 'ps'
         scriptLocation: 'inlineScript'
         inlineScript: |
           docker push $(acrName).azurecr.io/$(imageName):$(Build.BuildId)
@@ -81,7 +81,7 @@ stages:
             displayName: 'Deploy to AKS'
             inputs:
               azureSubscription: '$(azureSubscription)'
-              scriptType: 'pscore'
+              scriptType: 'ps'
               scriptLocation: 'inlineScript'
               inlineScript: |
                 # Get AKS credentials
