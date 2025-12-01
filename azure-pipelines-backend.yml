@@ -24,7 +24,7 @@ variables:
   azureSubscription: 'Azure-Personal-SC'  # Service connection name - you'll create this
 
 pool:
-  vmImage: 'ubuntu-latest'
+  name: 'Default'
 
 stages:
 - stage: Build
@@ -37,9 +37,10 @@ stages:
       displayName: 'Login to ACR'
       inputs:
         azureSubscription: '$(azureSubscription)'
-        scriptType: 'bash'
+        scriptType: 'pscore'
         scriptLocation: 'inlineScript'
         inlineScript: |
+          chcp 65001
           az acr login --name $(acrName)
 
     - task: Docker@2
@@ -56,7 +57,7 @@ stages:
       displayName: 'Push to ACR'
       inputs:
         azureSubscription: '$(azureSubscription)'
-        scriptType: 'bash'
+        scriptType: 'pscore'
         scriptLocation: 'inlineScript'
         inlineScript: |
           docker push $(acrName).azurecr.io/$(imageName):$(Build.BuildId)
@@ -80,17 +81,17 @@ stages:
             displayName: 'Deploy to AKS'
             inputs:
               azureSubscription: '$(azureSubscription)'
-              scriptType: 'bash'
+              scriptType: 'pscore'
               scriptLocation: 'inlineScript'
               inlineScript: |
                 # Get AKS credentials
-                az aks get-credentials \
-                  --resource-group $(resourceGroup) \
-                  --name $(aksCluster) \
+                az aks get-credentials `
+                  --resource-group $(resourceGroup) `
+                  --name $(aksCluster) `
                   --overwrite-existing
 
                 # Update deployment image
-                kubectl set image deployment/legal-rag-api \
+                kubectl set image deployment/legal-rag-api `
                   api=$(acrName).azurecr.io/$(imageName):$(Build.BuildId)
 
                 # Wait for rollout to complete
