@@ -24,7 +24,7 @@ variables:
   azureSubscription: 'Azure-Personal-SC'  # Service connection name - you'll create this
 
 pool:
-  vmImage: 'windows-latest'  # Changed from self-hosted to Microsoft-hosted agent for better reliability and memory
+  name: 'Default'  # Self-hosted Windows agent with aggressive memory optimization
 
 stages:
 - stage: Build
@@ -35,13 +35,44 @@ stages:
     timeoutInMinutes: 180  # 3 hours timeout
     steps:
     - task: PowerShell@2
-      displayName: 'Clean Docker Cache'
+      displayName: 'Aggressive Memory Cleanup'
       inputs:
         targetType: 'inline'
         script: |
-          Write-Host "Cleaning Docker cache to free memory..."
-          docker system prune -f
-          Write-Host "Docker cleanup complete"
+          Write-Host "=== Aggressive Docker Cleanup ==="
+
+          # Stop all running containers
+          Write-Host "Stopping all containers..."
+          docker ps -q | ForEach-Object { docker stop $_ }
+
+          # Remove all stopped containers
+          Write-Host "Removing stopped containers..."
+          docker container prune -f
+
+          # Remove dangling images
+          Write-Host "Removing dangling images..."
+          docker image prune -f
+
+          # Remove unused images (keep only last 2 versions)
+          Write-Host "Removing old images..."
+          docker images --filter "reference=legalragpersonalacr.azurecr.io/legal-rag-api" --format "{{.ID}}" | Select-Object -Skip 2 | ForEach-Object { docker rmi -f $_ }
+
+          # Remove build cache
+          Write-Host "Removing build cache..."
+          docker builder prune -f
+
+          # System-wide cleanup
+          Write-Host "System-wide cleanup..."
+          docker system prune -af --volumes
+
+          # Show current status
+          Write-Host "`n=== Docker Status ==="
+          docker system df
+
+          Write-Host "`n=== Memory Status ==="
+          Get-WmiObject Win32_OperatingSystem | Select-Object @{Name="FreeMemoryGB";Expression={[math]::Round($_.FreePhysicalMemory/1MB,2)}}, @{Name="TotalMemoryGB";Expression={[math]::Round($_.TotalVisibleMemorySize/1MB,2)}}
+
+          Write-Host "`nCleanup complete!"
 
     - task: AzureCLI@2
       displayName: 'Login to ACR'
@@ -114,6 +145,25 @@ stages:
         inlineScript: |
           Write-Host "Pushing latest tag (reusing layers from previous push)..."
           docker push $(acrName).azurecr.io/$(imageName):latest
+
+    - task: PowerShell@2
+      displayName: 'Cleanup After Push'
+      condition: always()  # Run even if previous steps failed
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "=== Post-Push Cleanup ==="
+
+          # Remove the images we just pushed to free memory immediately
+          Write-Host "Removing pushed images from local cache..."
+          docker rmi -f $(acrName).azurecr.io/$(imageName):$(Build.BuildId) 2>$null
+          docker rmi -f $(acrName).azurecr.io/$(imageName):latest 2>$null
+
+          # Quick prune
+          docker image prune -f
+
+          Write-Host "`n=== Final Memory Status ==="
+          Get-WmiObject Win32_OperatingSystem | Select-Object @{Name="FreeMemoryGB";Expression={[math]::Round($_.FreePhysicalMemory/1MB,2)}}, @{Name="TotalMemoryGB";Expression={[math]::Round($_.TotalVisibleMemorySize/1MB,2)}}
 
 - stage: Deploy
   displayName: 'Deploy to AKS'

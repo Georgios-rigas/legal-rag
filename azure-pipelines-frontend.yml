@@ -17,7 +17,7 @@ variables:
   azureSubscription: 'Azure-Personal-SC'  # Service connection name - you'll create this
 
 pool:
-  vmImage: 'ubuntu-latest'
+  name: 'Default'  # Self-hosted Windows agent
 
 stages:
 - stage: Build
@@ -31,7 +31,7 @@ stages:
       inputs:
         versionSpec: '18.x'
 
-    - task: Bash@3
+    - task: PowerShell@2
       displayName: 'Build React App'
       inputs:
         targetType: 'inline'
@@ -44,9 +44,10 @@ stages:
       displayName: 'Login to ACR'
       inputs:
         azureSubscription: '$(azureSubscription)'
-        scriptType: 'bash'
+        scriptType: 'ps'
         scriptLocation: 'inlineScript'
         inlineScript: |
+          chcp 65001
           az acr login --name $(acrName)
 
     - task: Docker@2
@@ -64,11 +65,22 @@ stages:
       displayName: 'Push to ACR'
       inputs:
         azureSubscription: '$(azureSubscription)'
-        scriptType: 'bash'
+        scriptType: 'ps'
         scriptLocation: 'inlineScript'
         inlineScript: |
           docker push $(acrName).azurecr.io/$(imageName):$(Build.BuildId)
           docker push $(acrName).azurecr.io/$(imageName):latest
+
+    - task: PowerShell@2
+      displayName: 'Cleanup After Push'
+      condition: always()
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "Cleaning up frontend images..."
+          docker rmi -f $(acrName).azurecr.io/$(imageName):$(Build.BuildId) 2>$null
+          docker rmi -f $(acrName).azurecr.io/$(imageName):latest 2>$null
+          docker image prune -f
 
 - stage: Deploy
   displayName: 'Deploy to AKS'
@@ -88,17 +100,17 @@ stages:
             displayName: 'Deploy to AKS'
             inputs:
               azureSubscription: '$(azureSubscription)'
-              scriptType: 'bash'
+              scriptType: 'ps'
               scriptLocation: 'inlineScript'
               inlineScript: |
                 # Get AKS credentials
-                az aks get-credentials \
-                  --resource-group $(resourceGroup) \
-                  --name $(aksCluster) \
+                az aks get-credentials `
+                  --resource-group $(resourceGroup) `
+                  --name $(aksCluster) `
                   --overwrite-existing
 
                 # Update deployment image
-                kubectl set image deployment/legal-rag-frontend \
+                kubectl set image deployment/legal-rag-frontend `
                   frontend=$(acrName).azurecr.io/$(imageName):$(Build.BuildId)
 
                 # Wait for rollout to complete
