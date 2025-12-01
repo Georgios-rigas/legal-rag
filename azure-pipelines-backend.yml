@@ -24,7 +24,7 @@ variables:
   azureSubscription: 'Azure-Personal-SC'  # Service connection name - you'll create this
 
 pool:
-  name: 'Default'
+  vmImage: 'windows-latest'  # Changed from self-hosted to Microsoft-hosted agent for better reliability and memory
 
 stages:
 - stage: Build

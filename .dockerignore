@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Version Control
+.git/
+.gitignore
+.github/
+
+# CI/CD
+azure-pipelines*.yml
+.azure/
+
+# Documentation
+README.md
+*.md
+docs/
+
+# Testing
+tests/
+test_*.py
+*_test.py
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Data files not needed in container
+*.csv
+*.xlsx
+*.xls
+
+# Scripts
+embed_and_index.py
+ingest_pipeline.py
+Dockerfile.ingest
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend (for backend builds)
+frontend/
