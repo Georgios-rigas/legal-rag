@@ -1,0 +1,62 @@
+name: Backend CI/CD (Personal)
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'api.py'
+      - 'query_rag.py'
+      - 'config.py'
+      - 'pdf_generator.py'
+      - 'requirements.txt'
+      - 'Dockerfile'
+      - 'chunked_output/**'
+      - 'case_id_to_s3_mapping.json'
+      - '.github/workflows/backend-cicd-personal.yml'
+  workflow_dispatch:
+
+env:
+  ACR_NAME: legalragpersonalacr
+  IMAGE_NAME: legal-rag-api
+  RESOURCE_GROUP: legal-rag-personal-rg
+  AKS_CLUSTER: legal-rag-personal-aks
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS_PERSONAL }}
+
+    - name: Login to ACR
+      run: az acr login --name ${{ env.ACR_NAME }}
+
+    - name: Build Docker image
+      run: |
+        docker build -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} -f Dockerfile .
+        docker tag ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+
+    - name: Push to ACR
+      run: |
+        docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+
+    - name: Get AKS Credentials
+      run: |
+        az aks get-credentials \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --name ${{ env.AKS_CLUSTER }} \
+          --overwrite-existing
+
+    - name: Deploy to AKS
+      run: |
+        kubectl set image deployment/legal-rag-api \
+          api=${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+        kubectl rollout status deployment/legal-rag-api --timeout=5m

@@ -1,62 +1,74 @@
-# Azure DevOps CI/CD Pipeline for Legal RAG Frontend
-
 trigger:
   branches:
     include:
     - main
+    - master
   paths:
     include:
     - frontend/**
+    - azure-pipelines-frontend.yml
+
+variables:
+  acrName: 'legalragpersonalacr'
+  imageName: 'legal-rag-frontend'
+  resourceGroup: 'legal-rag-personal-rg'
+  aksCluster: 'legal-rag-personal-aks'
+  dockerfilePath: '$(Build.SourcesDirectory)/frontend/Dockerfile.simple'
+  azureSubscription: 'Azure-Personal-SC'  # Service connection name - you'll create this
 
 pool:
   vmImage: 'ubuntu-latest'
 
-variables:
-  acrName: 'legalragacr'
-  acrLoginServer: 'legalragacr.azurecr.io'
-  imageName: 'legal-rag-frontend'
-  kubernetesNamespace: 'default'
-  deploymentName: 'legal-rag-frontend'
-
 stages:
 - stage: Build
-  displayName: 'Build Frontend and Docker Image'
+  displayName: 'Build and Push Docker Image'
   jobs:
   - job: BuildJob
-    displayName: 'Build and Push'
+    displayName: 'Build and Push Image'
     steps:
     - task: NodeTool@0
       displayName: 'Install Node.js'
       inputs:
         versionSpec: '18.x'
 
-    - script: |
-        cd frontend
-        npm install
-        npm run build
+    - task: Bash@3
       displayName: 'Build React App'
+      inputs:
+        targetType: 'inline'
+        workingDirectory: '$(Build.SourcesDirectory)/frontend'
+        script: |
+          npm install
+          npm run build
+
+    - task: AzureCLI@2
+      displayName: 'Login to ACR'
+      inputs:
+        azureSubscription: '$(azureSubscription)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az acr login --name $(acrName)
 
     - task: Docker@2
       displayName: 'Build Docker Image'
       inputs:
-        containerRegistry: 'ACR-Connection'
-        repository: '$(imageName)'
         command: 'build'
-        Dockerfile: 'frontend/Dockerfile.simple'
-        context: 'frontend'
+        Dockerfile: '$(dockerfilePath)'
+        workingDirectory: '$(Build.SourcesDirectory)/frontend'
         tags: |
           $(Build.BuildId)
           latest
+        arguments: '-t $(acrName).azurecr.io/$(imageName):$(Build.BuildId) -t $(acrName).azurecr.io/$(imageName):latest'
 
-    - task: Docker@2
-      displayName: 'Push Docker Image to ACR'
+    - task: AzureCLI@2
+      displayName: 'Push to ACR'
       inputs:
-        containerRegistry: 'ACR-Connection'
-        repository: '$(imageName)'
-        command: 'push'
-        tags: |
-          $(Build.BuildId)
-          latest
+        azureSubscription: '$(azureSubscription)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          docker push $(acrName).azurecr.io/$(imageName):$(Build.BuildId)
+          docker push $(acrName).azurecr.io/$(imageName):latest
 
 - stage: Deploy
   displayName: 'Deploy to AKS'
@@ -64,19 +76,33 @@ stages:
   condition: succeeded()
   jobs:
   - deployment: DeployJob
-    displayName: 'Deploy to Kubernetes'
+    displayName: 'Deploy to AKS'
     environment: 'production'
     strategy:
       runOnce:
         deploy:
           steps:
-          - task: KubernetesManifest@0
+          - checkout: self
+
+          - task: AzureCLI@2
             displayName: 'Deploy to AKS'
             inputs:
-              action: 'deploy'
-              kubernetesServiceConnection: 'AKS-Connection'
-              namespace: '$(kubernetesNamespace)'
-              manifests: |
-                k8s-frontend-deployment.yaml
-              containers: |
-                $(acrLoginServer)/$(imageName):$(Build.BuildId)
+              azureSubscription: '$(azureSubscription)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Get AKS credentials
+                az aks get-credentials \
+                  --resource-group $(resourceGroup) \
+                  --name $(aksCluster) \
+                  --overwrite-existing
+
+                # Update deployment image
+                kubectl set image deployment/legal-rag-frontend \
+                  frontend=$(acrName).azurecr.io/$(imageName):$(Build.BuildId)
+
+                # Wait for rollout to complete
+                kubectl rollout status deployment/legal-rag-frontend --timeout=5m
+
+                # Show pod status
+                kubectl get pods -l app=legal-rag-frontend
