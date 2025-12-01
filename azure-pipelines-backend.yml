@@ -32,6 +32,7 @@ stages:
   jobs:
   - job: BuildJob
     displayName: 'Build and Push Image'
+    timeoutInMinutes: 180  # 3 hours timeout
     steps:
     - task: AzureCLI@2
       displayName: 'Login to ACR'
@@ -55,12 +56,37 @@ stages:
 
     - task: AzureCLI@2
       displayName: 'Push to ACR'
+      timeoutInMinutes: 120  # 2 hours for push
       inputs:
         azureSubscription: '$(azureSubscription)'
         scriptType: 'ps'
         scriptLocation: 'inlineScript'
         inlineScript: |
-          docker push $(acrName).azurecr.io/$(imageName):$(Build.BuildId)
+          $ErrorActionPreference = "Stop"
+
+          # Push with retry logic
+          $maxRetries = 3
+          $retryCount = 0
+          $success = $false
+
+          while (-not $success -and $retryCount -lt $maxRetries) {
+            try {
+              Write-Host "Attempt $($retryCount + 1) of $maxRetries..."
+              docker push $(acrName).azurecr.io/$(imageName):$(Build.BuildId)
+              $success = $true
+              Write-Host "Successfully pushed tag $(Build.BuildId)"
+            } catch {
+              $retryCount++
+              if ($retryCount -lt $maxRetries) {
+                Write-Host "Push failed, retrying in 10 seconds..."
+                Start-Sleep -Seconds 10
+              } else {
+                throw "Failed to push after $maxRetries attempts"
+              }
+            }
+          }
+
+          # Push latest tag (reuses layers from previous push)
           docker push $(acrName).azurecr.io/$(imageName):latest
 
 - stage: Deploy
