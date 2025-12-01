@@ -32,7 +32,7 @@ interface Message {
   timestamp: Date
 }
 
-const API_BASE_URL = 'http://20.117.9.92'
+const API_BASE_URL = 'http://20.50.147.24'
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([])

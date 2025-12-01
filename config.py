@@ -13,7 +13,7 @@ PINECONE_ENVIRONMENT = os.getenv("PINECONE_ENVIRONMENT", "us-east-1")
 PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "legal-cases")
 
 # Embedding Settings
-EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "local")  # "openai" or "local"
+EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "openai")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
 LOCAL_EMBEDDING_MODEL = os.getenv("LOCAL_EMBEDDING_MODEL", "all-MiniLM-L6-v2")

@@ -16,7 +16,7 @@ else:
 
 def load_chunks():
     """Load parent and child chunks from JSON files."""
-    print(f"📂 Loading chunks from {config.CHUNKED_DATA_PATH}...")
+    print(f"Loading chunks from {config.CHUNKED_DATA_PATH}...")
 
     with open(config.CHILDREN_FILE, 'r') as f:
         children = json.load(f)
@@ -27,32 +27,44 @@ def load_chunks():
     # Create parent lookup
     parent_lookup = {p['id']: p for p in parents}
 
-    print(f"✅ Loaded {len(children)} child chunks and {len(parents)} parent chunks")
+    print(f"Loaded {len(children)} child chunks and {len(parents)} parent chunks")
     return children, parent_lookup
 
 
 def generate_embeddings(texts: List[str], batch_size: int = 100) -> List[List[float]]:
     """Generate embeddings using configured provider."""
-    print(f"🔮 Generating embeddings for {len(texts)} texts using {config.EMBEDDING_PROVIDER}...")
+    print(f"Generating embeddings for {len(texts)} texts using {config.EMBEDDING_PROVIDER}...")
 
     if config.EMBEDDING_PROVIDER == "openai":
+        import time
         client = OpenAI(api_key=config.OPENAI_API_KEY)
         all_embeddings = []
 
         for i in tqdm(range(0, len(texts), batch_size)):
             batch = texts[i:i + batch_size]
-            response = client.embeddings.create(
-                model=config.OPENAI_EMBEDDING_MODEL,
-                input=batch
-            )
-            batch_embeddings = [item.embedding for item in response.data]
-            all_embeddings.extend(batch_embeddings)
+            max_retries = 5
+            for retry in range(max_retries):
+                try:
+                    response = client.embeddings.create(
+                        model=config.OPENAI_EMBEDDING_MODEL,
+                        input=batch
+                    )
+                    batch_embeddings = [item.embedding for item in response.data]
+                    all_embeddings.extend(batch_embeddings)
+                    break
+                except Exception as e:
+                    if "rate_limit" in str(e).lower() and retry < max_retries - 1:
+                        wait_time = (2 ** retry) * 1  # Exponential backoff: 1, 2, 4, 8, 16 seconds
+                        print(f"\nRate limit hit, waiting {wait_time}s...")
+                        time.sleep(wait_time)
+                    else:
+                        raise
 
         return all_embeddings
     else:
         # Local embeddings with sentence-transformers
         model = SentenceTransformer(config.LOCAL_EMBEDDING_MODEL)
-        print(f"📥 Using local model: {config.LOCAL_EMBEDDING_MODEL}")
+        print(f"Using local model: {config.LOCAL_EMBEDDING_MODEL}")
 
         embeddings = []
         for i in tqdm(range(0, len(texts), batch_size)):
@@ -65,7 +77,7 @@ def generate_embeddings(texts: List[str], batch_size: int = 100) -> List[List[fl
 
 def init_pinecone_index():
     """Initialize Pinecone index (creates if doesn't exist)."""
-    print(f"🔌 Connecting to Pinecone...")
+    print(f"Connecting to Pinecone...")
 
     pc = Pinecone(api_key=config.PINECONE_API_KEY)
 
@@ -74,7 +86,7 @@ def init_pinecone_index():
     index_names = [idx['name'] for idx in existing_indexes]
 
     if config.PINECONE_INDEX_NAME not in index_names:
-        print(f"📊 Creating index '{config.PINECONE_INDEX_NAME}'...")
+        print(f"Creating index '{config.PINECONE_INDEX_NAME}'...")
         pc.create_index(
             name=config.PINECONE_INDEX_NAME,
             dimension=config.EMBEDDING_DIMENSION,
@@ -84,16 +96,16 @@ def init_pinecone_index():
                 region=config.PINECONE_ENVIRONMENT
             )
         )
-        print(f"✅ Index created successfully")
+        print(f"Index created successfully")
     else:
-        print(f"✅ Index '{config.PINECONE_INDEX_NAME}' already exists")
+        print(f"Index '{config.PINECONE_INDEX_NAME}' already exists")
 
     return pc.Index(config.PINECONE_INDEX_NAME)
 
 
 def index_chunks(children: List[Dict], parent_lookup: Dict, index):
     """Generate embeddings and index children with metadata."""
-    print(f"\n📥 Indexing {len(children)} child chunks...")
+    print(f"\nIndexing {len(children)} child chunks...")
 
     # Extract texts for embedding
     texts = [child['text'] for child in children]
@@ -127,13 +139,13 @@ def index_chunks(children: List[Dict], parent_lookup: Dict, index):
 
     # Upsert in batches
     batch_size = 100
-    print(f"⬆️  Upserting vectors to Pinecone...")
+    print(f"Upserting vectors to Pinecone...")
 
     for i in tqdm(range(0, len(vectors), batch_size)):
         batch = vectors[i:i + batch_size]
         index.upsert(vectors=batch)
 
-    print(f"✅ Successfully indexed {len(vectors)} vectors!")
+    print(f"Successfully indexed {len(vectors)} vectors!")
 
 
 def main():
@@ -144,12 +156,12 @@ def main():
 
     # Validate config
     if not config.PINECONE_API_KEY:
-        print("❌ Error: PINECONE_API_KEY not found in .env file")
+        print("Error: PINECONE_API_KEY not found in .env file")
         print("Please copy .env.example to .env and add your API keys")
         return
 
     if not config.OPENAI_API_KEY:
-        print("❌ Error: OPENAI_API_KEY not found in .env file")
+        print("Error: OPENAI_API_KEY not found in .env file")
         return
 
     try:
@@ -164,14 +176,14 @@ def main():
 
         # Get index stats
         stats = index.describe_index_stats()
-        print(f"\n📊 Index Stats:")
+        print(f"\nIndex Stats:")
         print(f"   Total vectors: {stats['total_vector_count']}")
         print(f"   Dimension: {stats['dimension']}")
 
-        print("\n🎉 Indexing complete! Ready for queries.")
+        print("\nIndexing complete! Ready for queries.")
 
     except Exception as e:
-        print(f"\n❌ Error: {e}")
+        print(f"\nError: {e}")
         raise
 
 

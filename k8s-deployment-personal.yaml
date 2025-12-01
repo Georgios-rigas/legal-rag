@@ -19,7 +19,7 @@ spec:
         - containerPort: 8000
         env:
         - name: EMBEDDING_PROVIDER
-          value: "local"
+          value: "openai"
         - name: LLM_PROVIDER
           value: "claude"
         - name: PINECONE_ENVIRONMENT
@@ -44,6 +44,11 @@ spec:
             secretKeyRef:
               name: legal-rag-secrets
               key: AWS_SECRET_ACCESS_KEY
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: legal-rag-secrets
+              key: OPENAI_API_KEY
         resources:
           requests:
             memory: "512Mi"
