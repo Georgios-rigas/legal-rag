@@ -34,12 +34,15 @@ stages:
 
     - script: |
         python evaluate_rag.py --output monitoring_eval_$(Build.BuildId).json
-      displayName: 'Run full evaluation (50 queries)'
+      displayName: 'Run full evaluation with W&B tracking'
       env:
         PINECONE_API_KEY: $(PINECONE_API_KEY)
         ANTHROPIC_API_KEY: $(ANTHROPIC_API_KEY)
         OPENAI_API_KEY: $(OPENAI_API_KEY)
         EMBEDDING_PROVIDER: openai
+        WANDB_ENABLED: true
+        WANDB_API_KEY: $(WANDB_API_KEY)
+        WANDB_PROJECT: legal-rag-monitoring
 
     - script: |
         python scripts/check_quality_gates.py monitoring_eval_$(Build.BuildId).json

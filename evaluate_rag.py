@@ -10,12 +10,23 @@ Usage:
 
 import json
 import time
+import os
 from typing import List, Dict, Any
 from collections import defaultdict
 import statistics
 
 from query_rag import LegalRAG
 import config
+
+# Optional: Weights & Biases integration
+WANDB_ENABLED = os.getenv("WANDB_ENABLED", "false").lower() == "true"
+if WANDB_ENABLED:
+    try:
+        import wandb
+        print("✅ Weights & Biases integration enabled")
+    except ImportError:
+        print("⚠️  wandb not installed. Install with: pip install wandb")
+        WANDB_ENABLED = False
 
 
 class RAGEvaluator:
@@ -39,6 +50,21 @@ class RAGEvaluator:
             "cost_metrics": {},
             "per_query_results": []
         }
+
+        # Initialize Weights & Biases if enabled
+        self.wandb_run = None
+        if WANDB_ENABLED:
+            project_name = os.getenv("WANDB_PROJECT", "legal-rag-monitoring")
+            self.wandb_run = wandb.init(
+                project=project_name,
+                name=f"eval_{time.strftime('%Y%m%d_%H%M%S')}",
+                config={
+                    "embedding_provider": config.EMBEDDING_PROVIDER,
+                    "llm_provider": config.LLM_PROVIDER,
+                    "dataset_size": len(self.dataset['test_queries'])
+                }
+            )
+            print(f"📊 W&B Run: {self.wandb_run.url}")
 
     def evaluate_retrieval(self, query: Dict[str, Any], retrieved_cases: List[Dict]) -> Dict[str, float]:
         """
@@ -378,6 +404,49 @@ class RAGEvaluator:
             print(f"  Average LLM Cost: ${self.results['cost_metrics']['avg_llm_cost']:.4f}")
 
         print(f"\n{'='*80}")
+
+        # Log to Weights & Biases
+        if self.wandb_run:
+            self._log_to_wandb()
+
+    def _log_to_wandb(self):
+        """Log metrics to Weights & Biases."""
+        if not self.wandb_run:
+            return
+
+        # Log summary metrics
+        metrics_to_log = {}
+
+        if self.results["retrieval_metrics"]:
+            metrics_to_log.update({
+                "precision@5": self.results["retrieval_metrics"]["avg_precision@5"],
+                "recall@5": self.results["retrieval_metrics"]["avg_recall@5"],
+                "mrr": self.results["retrieval_metrics"]["avg_mrr"]
+            })
+
+        if self.results["answer_quality_metrics"]:
+            metrics_to_log["citation_accuracy"] = self.results["answer_quality_metrics"]["avg_citation_accuracy"]
+
+        if self.results["performance_metrics"]:
+            metrics_to_log.update({
+                "avg_latency": self.results["performance_metrics"]["avg_total_latency"],
+                "p95_latency": self.results["performance_metrics"]["p95_total_latency"],
+                "embedding_time": self.results["performance_metrics"]["avg_embedding_time"],
+                "search_time": self.results["performance_metrics"]["avg_search_time"],
+                "llm_time": self.results["performance_metrics"]["avg_llm_time"]
+            })
+
+        if self.results["cost_metrics"]:
+            metrics_to_log.update({
+                "cost_per_query": self.results["cost_metrics"]["avg_cost_per_query"],
+                "total_cost": self.results["cost_metrics"]["total_cost"]
+            })
+
+        wandb.log(metrics_to_log)
+        print(f"\n✅ Metrics logged to Weights & Biases: {self.wandb_run.url}")
+
+        # Finish the run
+        wandb.finish()
 
     def save_results(self, output_path: str = "evaluation_results.json"):
         """Save evaluation results to JSON file."""
