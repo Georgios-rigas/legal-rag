@@ -11,9 +11,6 @@ schedules:
 pool:
   name: Default  # Your self-hosted agent pool
 
-variables:
-  pythonVersion: '3.11'
-
 stages:
 - stage: EvaluateProduction
   displayName: 'Run Production Evaluation'
@@ -22,12 +19,8 @@ stages:
     displayName: 'Evaluate RAG System'
     steps:
 
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '$(pythonVersion)'
-      displayName: 'Use Python $(pythonVersion)'
-
     - script: |
+        python --version
         python -m pip install --upgrade pip
         pip install -r requirements.txt
       displayName: 'Install dependencies'
