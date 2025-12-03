@@ -23,9 +23,9 @@ WANDB_ENABLED = os.getenv("WANDB_ENABLED", "false").lower() == "true"
 if WANDB_ENABLED:
     try:
         import wandb
-        print("✅ Weights & Biases integration enabled")
+        print("[OK] Weights & Biases integration enabled")
     except ImportError:
-        print("⚠️  wandb not installed. Install with: pip install wandb")
+        print("[WARNING]  wandb not installed. Install with: pip install wandb")
         WANDB_ENABLED = False
 
 
@@ -64,7 +64,7 @@ class RAGEvaluator:
                     "dataset_size": len(self.dataset['test_queries'])
                 }
             )
-            print(f"📊 W&B Run: {self.wandb_run.url}")
+            print(f"[INFO] W&B Run: {self.wandb_run.url}")
 
     def evaluate_retrieval(self, query: Dict[str, Any], retrieved_cases: List[Dict]) -> Dict[str, float]:
         """
@@ -443,7 +443,7 @@ class RAGEvaluator:
             })
 
         wandb.log(metrics_to_log)
-        print(f"\n✅ Metrics logged to Weights & Biases: {self.wandb_run.url}")
+        print(f"\n[OK] Metrics logged to Weights & Biases: {self.wandb_run.url}")
 
         # Finish the run
         wandb.finish()
