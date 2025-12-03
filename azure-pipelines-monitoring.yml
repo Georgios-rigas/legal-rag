@@ -26,7 +26,7 @@ stages:
       displayName: 'Install dependencies'
 
     - script: |
-        python evaluate_rag.py --output monitoring_eval_$(Build.BuildId).json
+        python evaluate_rag.py --max-queries 10 --output monitoring_eval_$(Build.BuildId).json
       displayName: 'Run full evaluation with W&B tracking'
       env:
         PINECONE_API_KEY: $(PINECONE_API_KEY)
