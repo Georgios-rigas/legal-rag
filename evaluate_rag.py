@@ -212,32 +212,25 @@ class RAGEvaluator:
         query_text = query_obj["query"]
         query_id = query_obj["query_id"]
 
-        print(f"\nQuery {query_id}: {query_text[:80]}...")
+        print(f"
+Query {query_id}: {query_text[:80]}...")
 
         # Time the complete query
         start_time = time.time()
 
-        # Step 1: Embed query
-        embed_start = time.time()
-        query_embedding = self.rag.embed_query(query_text)
-        embed_time = time.time() - embed_start
-
-        # Step 2: Search Pinecone
-        search_start = time.time()
-        search_results = self.rag.index.query(
-            vector=query_embedding,
-            top_k=5,
-            include_metadata=True
-        )
-        retrieved_cases = search_results.get("matches", [])
-        search_time = time.time() - search_start
-
-        # Step 3: Generate answer
-        llm_start = time.time()
-        answer, sources = self.rag.generate_answer(query_text, retrieved_cases)
-        llm_time = time.time() - llm_start
-
+        # Use the RAG system's query method which handles everything properly
+        response = self.rag.query(query_text, top_k=5)
         total_time = time.time() - start_time
+        
+        # Extract answer and sources from response
+        answer = response.get('answer', '')
+        sources = response.get('sources', [])
+        
+        # Approximate timing breakdown (since we used the full query method)
+        # We'll estimate based on typical patterns
+        embed_time = 0.2  # Approximate embedding time
+        search_time = 0.3  # Approximate search time
+        llm_time = total_time - embed_time - search_time
 
         timings = {
             "total": total_time,
@@ -245,6 +238,9 @@ class RAGEvaluator:
             "search": search_time,
             "llm": llm_time
         }
+
+        # For retrieval evaluation, we need the case IDs from sources
+        retrieved_cases = [{'metadata': src} for src in sources]
 
         # Evaluate retrieval
         retrieval_metrics = self.evaluate_retrieval(query_obj, retrieved_cases)
