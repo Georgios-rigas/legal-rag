@@ -1,0 +1,62 @@
+trigger: none  # Don't trigger on code changes
+
+schedules:
+- cron: "0 2 * * *"  # Run daily at 2 AM UTC
+  displayName: Daily Production Evaluation
+  branches:
+    include:
+    - main
+  always: true  # Run even if no code changes
+
+pool:
+  name: Default  # Your self-hosted agent pool
+
+variables:
+  pythonVersion: '3.11'
+
+stages:
+- stage: EvaluateProduction
+  displayName: 'Run Production Evaluation'
+  jobs:
+  - job: RunEvaluation
+    displayName: 'Evaluate RAG System'
+    steps:
+
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(pythonVersion)'
+      displayName: 'Use Python $(pythonVersion)'
+
+    - script: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+      displayName: 'Install dependencies'
+
+    - script: |
+        python evaluate_rag.py --output monitoring_eval_$(Build.BuildId).json
+      displayName: 'Run full evaluation (50 queries)'
+      env:
+        PINECONE_API_KEY: $(PINECONE_API_KEY)
+        ANTHROPIC_API_KEY: $(ANTHROPIC_API_KEY)
+        OPENAI_API_KEY: $(OPENAI_API_KEY)
+        EMBEDDING_PROVIDER: openai
+
+    - script: |
+        python scripts/check_quality_gates.py monitoring_eval_$(Build.BuildId).json
+      displayName: 'Check quality gates (warnings only)'
+      continueOnError: true  # Don't fail pipeline, just warn
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: 'monitoring_eval_$(Build.BuildId).json'
+        ArtifactName: 'evaluation-results'
+        publishLocation: 'Container'
+      displayName: 'Publish evaluation results'
+      condition: always()
+
+    - script: |
+        echo "=================================================="
+        echo "Evaluation completed for Build $(Build.BuildId)"
+        echo "View results in Pipeline Artifacts"
+        echo "=================================================="
+      displayName: 'Summary'

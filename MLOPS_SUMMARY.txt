@@ -1,0 +1,656 @@
+================================================================================
+                 LEGAL RAG SYSTEM - MLOPS CI/CD SUMMARY
+================================================================================
+
+OVERVIEW
+--------
+Your Legal RAG (Retrieval-Augmented Generation) system is deployed on Azure
+Kubernetes Service (AKS) with fully automated CI/CD pipelines that build, test,
+and deploy changes from Git commits to production with zero downtime.
+
+SYSTEM COMPONENTS
+-----------------
+1. Frontend: React app at http://52.166.46.37 (port 80)
+2. Backend API: FastAPI at http://20.50.147.24 (port 8000)
+3. Vector Database: Pinecone (9,594 legal case chunks, 1536 dimensions)
+4. LLM Services: OpenAI embeddings + Anthropic Claude
+5. Storage: AWS S3 (1,571 PDF legal cases)
+6. Container Registry: Azure Container Registry (ACR)
+7. Orchestration: Azure Kubernetes Service (AKS)
+
+================================================================================
+                        CI/CD PIPELINE FLOW
+================================================================================
+
+TRIGGER
+-------
+You push code to Git → Azure DevOps webhooks detect changes → Pipelines trigger
+
+BACKEND PIPELINE (azure-pipelines-backend.yml)
+----------------------------------------------
+
+STAGE 1: BUILD AND PUSH DOCKER IMAGE
+-------------------------------------
+
+Step 1: Memory Cleanup (Self-hosted Windows agent)
+   - Stop all Docker containers
+   - Remove stopped containers and dangling images
+   - Remove old images (keep last 2 versions only)
+   - Clear build cache
+   - Free up memory (was hitting 95% usage, now ~30%)
+
+Step 2: Login to Azure Container Registry
+   Command: az acr login --name legalragpersonalacr
+
+Step 3: Build Docker Image
+   Base: python:3.11-slim
+   Size: ~500MB (was 4.46GB with sentence-transformers!)
+   Tags:
+     - Build ID (e.g., 20251201.10)
+     - latest
+
+   What's in the image:
+   - Python 3.11
+   - FastAPI, uvicorn, pinecone, anthropic, openai
+   - Application code (api.py, query_rag.py, config.py, etc.)
+   - Chunked legal case data (9,594 child + 1,671 parent chunks)
+   - S3 case ID mapping
+
+   Build time: 3-5 minutes (was 10+ minutes)
+
+Step 4: Push Build ID Tag to ACR
+   Pushes: legalragpersonalacr.azurecr.io/legal-rag-api:20251201.10
+   Timeout: 2 hours (with progress reporting every minute)
+   Time: 2-3 minutes (was 8+ minutes)
+
+Step 5: Push Latest Tag to ACR
+   Pushes: legalragpersonalacr.azurecr.io/legal-rag-api:latest
+   Reuses layers from previous push (much faster)
+   Time: 1-2 minutes
+
+Step 6: Cleanup After Push
+   - Remove local images to free memory immediately
+   - Quick prune
+
+STAGE 2: DEPLOY TO AKS
+----------------------
+
+Step 1: Get AKS Credentials
+   Command: az aks get-credentials
+              --resource-group legal-rag-personal-rg
+              --name legal-rag-personal-aks
+
+Step 2: Update Deployment Image
+   Command: kubectl set image deployment/legal-rag-api
+              api=legalragpersonalacr.azurecr.io/legal-rag-api:$(Build.BuildId)
+
+   What happens (Kubernetes Rolling Update):
+   1. Kubernetes creates NEW pod with new image
+   2. Waits for pod to start and pass readiness probe (GET /docs → 200 OK)
+   3. Once new pod is ready, switches traffic from old to new pod
+   4. Terminates old pod
+   5. ZERO DOWNTIME - old pod keeps serving until new one is ready!
+
+Step 3: Wait for Rollout to Complete
+   Command: kubectl rollout status deployment/legal-rag-api --timeout=10m
+   Monitors until new pod is running and healthy
+
+Step 4: Verify Deployment
+   - Check pod status
+   - View logs
+   - Confirm API is responding
+
+FRONTEND PIPELINE (azure-pipelines-frontend.yml)
+------------------------------------------------
+
+STAGE 1: BUILD AND PUSH
+-----------------------
+1. Build React App
+   - npm install
+   - npm run build
+   - Output: dist/ with optimized static files
+
+2. Build Docker Image
+   - Multi-stage build (node:18 → nginx:alpine)
+   - Copy dist/ to nginx html directory
+   - Size: ~50MB
+   - Build time: 1-2 minutes
+
+3. Push to ACR
+   - Push both Build ID and latest tags
+   - Time: ~1 minute
+
+STAGE 2: DEPLOY TO AKS
+----------------------
+Same process as backend:
+- Get AKS credentials
+- Update deployment image
+- Wait for rollout
+- Verify
+
+================================================================================
+                    KUBERNETES DEPLOYMENT DETAILS
+================================================================================
+
+BACKEND POD CONFIGURATION
+-------------------------
+Image: legalragpersonalacr.azurecr.io/legal-rag-api:latest
+Image Pull Policy: Always (forces fresh pull)
+Port: 8000
+Replicas: 1 (can scale to 10+)
+
+Environment Variables:
+  - EMBEDDING_PROVIDER: "openai"
+  - LLM_PROVIDER: "claude"
+  - PINECONE_ENVIRONMENT: "us-east-1"
+  - PINECONE_API_KEY: (from Kubernetes secret)
+  - ANTHROPIC_API_KEY: (from Kubernetes secret)
+  - OPENAI_API_KEY: (from Kubernetes secret)
+  - AWS_ACCESS_KEY_ID: (from Kubernetes secret)
+  - AWS_SECRET_ACCESS_KEY: (from Kubernetes secret)
+
+Resource Limits:
+  Requests: 512Mi memory, 250m CPU
+  Limits: 2Gi memory, 1000m CPU
+
+Health Checks:
+  Liveness Probe: GET /docs every 10s (after 30s initial delay)
+  Readiness Probe: GET /docs every 5s (after 10s initial delay)
+
+Service:
+  Type: LoadBalancer
+  External IP: 20.50.147.24
+  Port: 80 → Pod:8000
+
+FRONTEND POD CONFIGURATION
+--------------------------
+Image: legalragpersonalacr.azurecr.io/legal-rag-frontend:latest
+Port: 80
+Replicas: 1
+
+Service:
+  Type: LoadBalancer
+  External IP: 52.166.46.37
+  Port: 80 → Pod:80
+
+KUBERNETES SECRETS
+------------------
+Name: legal-rag-secrets
+Contains:
+  - PINECONE_API_KEY
+  - ANTHROPIC_API_KEY
+  - OPENAI_API_KEY
+  - AWS_ACCESS_KEY_ID
+  - AWS_SECRET_ACCESS_KEY
+
+Created with:
+  kubectl create secret generic legal-rag-secrets \
+    --from-literal=PINECONE_API_KEY='pcsk_...' \
+    --from-literal=ANTHROPIC_API_KEY='sk-ant-...' \
+    --from-literal=OPENAI_API_KEY='sk-proj-...' \
+    --from-literal=AWS_ACCESS_KEY_ID='AKIA...' \
+    --from-literal=AWS_SECRET_ACCESS_KEY='...'
+
+================================================================================
+                      DATA INDEXING PIPELINE
+                    (Manual Process, Not in CI/CD)
+================================================================================
+
+WHY MANUAL?
+-----------
+- Expensive: ~$0.04 per full re-index (OpenAI API costs)
+- Time consuming: 10-15 minutes
+- Only needed when:
+  * Switching embedding models
+  * Adding new legal cases
+  * Changing chunking strategy
+  * Recreating index from scratch
+
+PROCESS FLOW
+------------
+
+1. RAW DATA
+   - 1,571 legal case PDFs stored in AWS S3
+   - Referenced via case_id_to_s3_mapping.json
+
+2. CHUNKING (ingest_pipeline.py)
+   - Downloads PDFs from S3
+   - Extracts text from each case
+   - Creates parent chunks (full sections, ~1,671 total)
+   - Creates child chunks (smaller units for search, ~9,594 total)
+   - Saves to chunked_output/children.json and chunked_output/parents.json
+   - Committed to Git for version control
+
+3. EMBEDDING GENERATION (embed_and_index.py)
+
+   For each of 9,594 child chunks:
+
+   a. Load text chunk
+      Example: "In Smith v. Jones (2023), the court held that brokers must..."
+
+   b. Call OpenAI Embeddings API
+      Model: text-embedding-3-small
+      Input: chunk text
+      Output: 1536-dimensional vector
+      Example: [0.012, -0.034, 0.156, ..., 0.089]
+
+   c. Process in batches of 100 chunks
+      - Retry with exponential backoff on rate limits (1s, 2s, 4s, 8s, 16s)
+      - Progress: "Generating embeddings... 45% complete"
+
+   Time: ~8-10 minutes for all 9,594 chunks
+   Cost: ~$0.04 (one-time)
+
+4. PINECONE INDEXING
+
+   a. Create or connect to index
+      Name: legal-cases
+      Dimension: 1536
+      Metric: cosine similarity
+
+   b. Upsert vectors in batches of 100
+      Each vector includes:
+      - ID: "case_8118004_chunk_001"
+      - Values: [0.012, -0.034, ...] (1536 dimensions)
+      - Metadata:
+        * case_id: "8118004"
+        * parent_id: "parent_001"
+        * text: "In Smith v. Jones..."
+        * case_name: "Smith v. Jones"
+
+   c. Verify indexing
+      Command: python check_index.py
+      Output: "Total vectors: 9594, Dimension: 1536"
+
+   Time: ~5-7 minutes for all 9,594 vectors
+   Total indexing time: ~15 minutes
+
+5. RESULT
+   - Pinecone now has 9,594 searchable legal case chunks
+   - Backend can query instantly with vector similarity search
+   - Ready for production use!
+
+RE-INDEXING
+-----------
+When needed (e.g., switching from local to OpenAI embeddings):
+
+  python reindex_with_openai.py  # Deletes old index
+  python embed_and_index.py      # Creates new index with new embeddings
+
+================================================================================
+                         REQUEST FLOW (USER QUERY)
+================================================================================
+
+USER SUBMITS QUERY
+------------------
+User types: "What are the requirements for a broker to earn commission?"
+Clicks: Submit button
+
+FRONTEND (52.166.46.37)
+-----------------------
+1. React app captures input
+2. Sends POST request to backend:
+   POST http://20.50.147.24/api/query
+   Body: { "query": "What are requirements..." }
+
+BACKEND API (20.50.147.24)
+--------------------------
+Receives request → Processes in 3 steps:
+
+STEP 1: Generate Query Embedding (~200ms)
+   - Calls OpenAI Embeddings API
+   - Input: "What are requirements..."
+   - Output: 1536-dimensional vector [0.023, -0.145, ...]
+   - Model: text-embedding-3-small
+   - Cost: ~$0.00004 per query
+
+STEP 2: Search Pinecone (~300ms)
+   - Sends query vector to Pinecone
+   - Pinecone performs cosine similarity search
+   - Returns top 5 most similar case chunks with:
+     * Case IDs
+     * Similarity scores
+     * Chunk metadata
+
+   Example results:
+   1. Score 0.89: "In Smith v. Jones, broker must have valid license..."
+   2. Score 0.87: "Commission requires written agreement per Jones v..."
+   3. Score 0.85: "Three key requirements established in Davis v..."
+   4. Score 0.82: "Direct involvement in transaction required..."
+   5. Score 0.80: "Broker compensation contingent on three factors..."
+
+STEP 3: Retrieve Parent Context
+   - For each child chunk, look up parent chunk ID
+   - Load full parent text from chunked_output/parents.json
+   - Provides broader context around the match
+   - Example: Full section instead of just paragraph
+
+STEP 4: Generate Answer with Claude (~3-5s)
+   - Calls Anthropic Claude API
+   - Model: claude-sonnet-4-5-20250929
+   - Prompt includes:
+     * User's question
+     * Top 5 retrieved case excerpts
+     * Instructions to cite sources
+
+   Claude generates:
+   - Natural language answer
+   - Citations to specific cases
+   - Legal analysis
+
+   Example output:
+   "Based on relevant case law, brokers must satisfy three key
+   requirements to earn commission: (1) valid broker's license
+   (Smith v. Jones, 2023), (2) written agreement with property
+   owner (Jones v. Davis, 2022), and (3) direct involvement in
+   transaction (Davis v. Miller, 2021)..."
+
+   Cost: ~$0.013 per query
+
+STEP 5: Format Response
+   Backend packages response as JSON:
+   {
+     "answer": "Based on relevant case law...",
+     "sources": [
+       {
+         "case_id": "8118004",
+         "case_name": "Smith v. Jones",
+         "excerpt": "...",
+         "score": 0.89
+       },
+       ...
+     ]
+   }
+
+FRONTEND DISPLAYS RESULT
+------------------------
+1. Receives JSON response
+2. Renders answer in chat bubble
+3. Displays source citations with download buttons
+4. User can click to download full PDF from S3
+
+TOTAL QUERY TIME: ~4-6 seconds
+TOTAL QUERY COST: ~$0.013 (mostly Claude generation)
+
+================================================================================
+                         DEVELOPMENT WORKFLOW
+================================================================================
+
+DAY-TO-DAY DEVELOPMENT
+----------------------
+
+1. LOCAL DEVELOPMENT
+   You work on your local machine:
+   - Edit code (e.g., vim api.py)
+   - Test locally:
+     * Backend: python -m uvicorn api:app --reload
+     * Frontend: cd frontend && npm run dev
+   - Iterate until feature works
+
+2. COMMIT CHANGES
+   git add .
+   git commit -m "Add new search filtering feature"
+
+3. PUSH TO REMOTE
+   git push azuredevops main
+
+4. AUTOMATIC PIPELINE TRIGGER
+   - Azure DevOps detects push via webhook
+   - Checks which files changed
+   - Triggers appropriate pipeline(s):
+     * Backend files changed? → Backend pipeline runs
+     * Frontend files changed? → Frontend pipeline runs
+     * Both changed? → Both pipelines run in parallel
+
+5. MONITOR PIPELINE
+   - View in Azure DevOps → Pipelines
+   - Watch build progress in real-time
+   - Check for errors in logs
+   - Verify Docker image pushed to ACR
+   - See deployment status
+
+6. AUTOMATIC DEPLOYMENT
+   - Pipeline deploys to AKS automatically
+   - Kubernetes performs rolling update
+   - New code is live in ~10-15 minutes total!
+   - Zero downtime for users
+
+7. VERIFY IN PRODUCTION
+   - Open http://52.166.46.37 in browser
+   - Test your new feature
+   - Check backend logs if needed:
+     kubectl logs -l app=legal-rag-api --tail=50
+
+ROLLBACK IF NEEDED
+------------------
+If something goes wrong:
+
+  kubectl rollout undo deployment/legal-rag-api
+
+This instantly switches back to the previous version!
+
+================================================================================
+                        MONITORING & TROUBLESHOOTING
+================================================================================
+
+CHECK DEPLOYMENT STATUS
+-----------------------
+kubectl get deployments
+kubectl get pods
+kubectl get services
+
+VIEW POD LOGS
+-------------
+kubectl logs -l app=legal-rag-api --tail=100 --follow
+kubectl logs -l app=legal-rag-frontend --tail=100
+
+CHECK POD HEALTH
+----------------
+kubectl describe pod <pod-name>
+kubectl get events
+
+COMMON ISSUES AND FIXES
+-----------------------
+
+Issue 1: Pod CrashLoopBackOff
+  Symptom: Pod keeps restarting
+  Diagnose: kubectl logs <pod-name>
+  Common causes:
+    - Missing environment variable
+    - Missing secret
+    - Code error on startup
+    - Wrong Python dependencies
+
+Issue 2: ImagePullBackOff
+  Symptom: Cannot pull Docker image
+  Diagnose: kubectl describe pod <pod-name>
+  Common causes:
+    - Image tag doesn't exist in ACR
+    - Typo in image name
+  Fix: Use correct tag (kubectl set image...)
+
+Issue 3: Dimension Mismatch
+  Symptom: Query fails with vector dimension error
+  Cause: Backend embeddings (384d) don't match Pinecone (1536d)
+  Fix: Re-index Pinecone with correct dimensions
+
+Issue 4: Frontend shows "Failed to get response"
+  Symptom: UI loads but queries fail
+  Diagnose: Check backend logs
+  Common causes:
+    - Frontend has wrong backend URL in App.tsx
+    - Backend pod not running
+    - Backend returning 500 error
+  Fix: Update API_BASE_URL in frontend/src/App.tsx
+
+RESTART DEPLOYMENT
+------------------
+kubectl rollout restart deployment/legal-rag-api
+
+UPDATE ENVIRONMENT VARIABLE
+---------------------------
+kubectl set env deployment/legal-rag-api EMBEDDING_PROVIDER=openai
+
+UPDATE SECRET
+-------------
+kubectl delete secret legal-rag-secrets
+kubectl create secret generic legal-rag-secrets \
+  --from-literal=PINECONE_API_KEY='new-key' \
+  --from-literal=ANTHROPIC_API_KEY='new-key' \
+  ...
+kubectl rollout restart deployment/legal-rag-api
+
+================================================================================
+                            COST BREAKDOWN
+================================================================================
+
+INFRASTRUCTURE COSTS (Azure)
+----------------------------
+- AKS Cluster: ~$70/month (1 node, Standard_DS2_v2)
+- ACR: ~$5/month (storage + bandwidth)
+- Load Balancers: ~$20/month (2 public IPs)
+Total Azure: ~$95/month
+
+API COSTS (Per Query)
+---------------------
+- OpenAI Embeddings: ~$0.00004/query
+- Anthropic Claude: ~$0.013/query
+Total per query: ~$0.013
+
+MONTHLY API COSTS (Estimated)
+------------------------------
+Assuming 100 queries/day:
+- OpenAI: 100 * 30 * $0.00004 = $0.12/month
+- Claude: 100 * 30 * $0.013 = $39/month
+Total API: ~$40/month
+
+TOTAL MONTHLY COST: ~$135/month
+
+ONE-TIME COSTS
+--------------
+- Initial Pinecone indexing: ~$0.04 (one-time)
+- Re-indexing when needed: ~$0.04 each time
+
+COST OPTIMIZATION ACHIEVED
+--------------------------
+Before: 4.46GB Docker images
+After: ~500MB Docker images
+
+Benefits:
+- Faster builds: 10 min → 3 min (saves agent time)
+- Faster deployments: Less bandwidth, faster startup
+- Less memory during builds: 95% → 30% (more reliable)
+- Smaller ACR storage costs
+
+================================================================================
+                            KEY INSIGHTS
+================================================================================
+
+ZERO DOWNTIME DEPLOYMENTS
+-------------------------
+Kubernetes rolling updates ensure:
+- Old pod serves traffic while new pod starts
+- New pod must pass health checks before receiving traffic
+- Old pod only terminates after new pod is ready
+- Users experience no interruption
+
+SEPARATION OF CONCERNS
+-----------------------
+- Data pipeline (indexing): Manual, expensive, infrequent
+- Application deployment: Automated, fast, frequent
+- This separation makes sense because:
+  * Data changes rarely (new legal cases added occasionally)
+  * Code changes frequently (bug fixes, features)
+  * Re-indexing is expensive and slow
+  * Deploying code is cheap and fast
+
+IMAGE SIZE MATTERS
+------------------
+Reducing image from 4.46GB to 500MB:
+- 89% reduction in size
+- 10x faster to push/pull
+- 70% less memory during build
+- More reliable pipelines
+- Lower costs
+
+ENVIRONMENT VARIABLES ARE CRITICAL
+----------------------------------
+Your backend behavior is controlled by env vars:
+- EMBEDDING_PROVIDER: "openai" vs "local"
+- If set wrong, pod crashes or gives wrong results
+- Always verify deployment env vars after changes
+
+SECRETS SECURITY
+----------------
+- Never commit secrets to Git
+- GitHub blocks pushes with exposed secrets
+- Use Kubernetes secrets for production
+- Use .env for local development only
+
+================================================================================
+                          QUICK REFERENCE
+================================================================================
+
+USEFUL COMMANDS
+---------------
+
+Check pod status:
+  kubectl get pods -l app=legal-rag-api
+
+View logs:
+  kubectl logs -l app=legal-rag-api --tail=50 --follow
+
+Restart deployment:
+  kubectl rollout restart deployment/legal-rag-api
+
+Rollback deployment:
+  kubectl rollout undo deployment/legal-rag-api
+
+Update image:
+  kubectl set image deployment/legal-rag-api \
+    api=legalragpersonalacr.azurecr.io/legal-rag-api:latest
+
+Scale deployment:
+  kubectl scale deployment/legal-rag-api --replicas=3
+
+Check secrets:
+  kubectl get secrets
+  kubectl describe secret legal-rag-secrets
+
+Access pod shell:
+  kubectl exec -it <pod-name> -- /bin/bash
+
+Port forward for local testing:
+  kubectl port-forward service/legal-rag-api-service 8000:80
+
+PIPELINE LOCATIONS
+------------------
+Backend: azure-pipelines-backend.yml
+Frontend: azure-pipelines-frontend.yml
+
+KUBERNETES CONFIGS
+------------------
+Backend: k8s-deployment-personal.yaml
+Frontend: k8s-frontend-deployment.yaml
+
+PUBLIC URLS
+-----------
+Frontend: http://52.166.46.37
+Backend API: http://20.50.147.24
+Backend Docs: http://20.50.147.24/docs
+
+================================================================================
+                              END OF SUMMARY
+================================================================================
+
+This MLOps system gives you:
+✓ Automated deployments from Git push to production
+✓ Zero downtime for users during updates
+✓ Fast iteration cycle (~10-15 min from commit to live)
+✓ Scalable infrastructure (can handle 10x traffic easily)
+✓ Cost-effective (~$135/month total)
+✓ Fully version controlled and reproducible
+
+The system is production-ready and handles the complete ML lifecycle from
+data ingestion through embedding generation to serving user queries with
+AI-generated answers backed by legal case citations.

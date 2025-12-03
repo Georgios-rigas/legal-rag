@@ -1,0 +1,929 @@
+{
+  "metadata": {
+    "dataset_name": "Legal RAG Evaluation Dataset",
+    "version": "1.0",
+    "created_date": "2025-12-01",
+    "description": "Curated evaluation dataset for testing retrieval quality, answer accuracy, and system performance of the Legal RAG system.",
+    "total_queries": 50,
+    "query_categories": [
+      "contract_law",
+      "criminal_law",
+      "property_law",
+      "tort_law",
+      "civil_procedure",
+      "constitutional_law",
+      "employment_law",
+      "family_law"
+    ]
+  },
+  "test_queries": [
+    {
+      "query_id": 1,
+      "category": "property_law",
+      "query": "What are the requirements for a broker to earn commission on a real estate transaction?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "broker license requirements",
+        "written agreement",
+        "direct involvement in transaction",
+        "commission eligibility"
+      ],
+      "relevant_case_ids": [],
+      "notes": "Should retrieve cases discussing broker commission requirements and real estate transactions"
+    },
+    {
+      "query_id": 2,
+      "category": "criminal_law",
+      "query": "What constitutes criminal intent for indecent exposure charges?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "criminal intent requirements",
+        "indecent exposure elements",
+        "intentional vs accidental exposure",
+        "public place requirements"
+      ],
+      "relevant_case_ids": [8118004],
+      "ground_truth_case": "Peyton v. District of Columbia",
+      "expected_answer_points": [
+        "Intent must be shown before conviction",
+        "Intent is general, not directed at specific persons",
+        "Exposure becomes indecent when defendant knows or should know it will be observed",
+        "Intent can be inferred from reckless conduct"
+      ],
+      "notes": "Peyton v. District of Columbia discusses criminal intent for indecent exposure"
+    },
+    {
+      "query_id": 3,
+      "category": "civil_procedure",
+      "query": "Does the Municipal Court have jurisdiction to grant declaratory judgments?",
+      "difficulty": "easy",
+      "expected_topics": [
+        "Municipal Court jurisdiction",
+        "declaratory judgment authority",
+        "Federal Declaratory Judgments Act",
+        "court powers"
+      ],
+      "relevant_case_ids": [8118054],
+      "ground_truth_case": "Branson v. Harris",
+      "expected_answer_points": [
+        "Municipal Court lacks jurisdiction for declaratory judgments",
+        "Federal Declaratory Judgments Act applies only to courts created by Congress with judges holding office during good behavior",
+        "Municipal Court judges hold office for limited terms"
+      ],
+      "notes": "Branson v. Harris directly addresses Municipal Court jurisdiction for declaratory judgments"
+    },
+    {
+      "query_id": 4,
+      "category": "constitutional_law",
+      "query": "Is a wagering tax act that requires registration unconstitutional under the Fifth Amendment?",
+      "difficulty": "hard",
+      "expected_topics": [
+        "Fifth Amendment self-incrimination",
+        "wagering tax constitutionality",
+        "tax vs penalty distinction",
+        "registration requirements"
+      ],
+      "relevant_case_ids": [8118121],
+      "ground_truth_case": "United States v. Lewis",
+      "expected_answer_points": [
+        "Wagering tax act held constitutional",
+        "Registration required before entering business, not after accepting wagers",
+        "No self-incrimination for future acts",
+        "Supreme Court upheld in Kahriger case"
+      ],
+      "notes": "United States v. Lewis discusses constitutionality of wagering tax with Fifth Amendment analysis"
+    },
+    {
+      "query_id": 5,
+      "category": "criminal_law",
+      "query": "Can prior convictions be used to determine guilt in a current criminal case?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "prior conviction evidence",
+        "credibility vs guilt determination",
+        "evidentiary rules",
+        "defendant testimony"
+      ],
+      "relevant_case_ids": [8118004],
+      "ground_truth_case": "Peyton v. District of Columbia",
+      "expected_answer_points": [
+        "Prior convictions may be brought out on cross-examination",
+        "Must be restricted to credibility question only",
+        "Cannot be considered for determining guilt or innocence of current offense",
+        "Trial judge properly used it for credibility, not guilt determination"
+      ],
+      "notes": "Discusses proper use of prior convictions for credibility vs guilt"
+    },
+    {
+      "query_id": 6,
+      "category": "civil_procedure",
+      "query": "What relief can a court grant if it lacks jurisdiction over the type of claim filed?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "court jurisdiction",
+        "alternative relief",
+        "prayer for relief",
+        "judgment limitations"
+      ],
+      "relevant_case_ids": [8118054],
+      "ground_truth_case": "Branson v. Harris",
+      "expected_answer_points": [
+        "Court cannot grant relief for claims outside its jurisdiction",
+        "Court not bound by prayer for relief in some cases",
+        "Party must request alternative relief from trial court",
+        "No relief granted if only requested relief is beyond jurisdiction"
+      ],
+      "notes": "Addresses what happens when court lacks jurisdiction for requested relief"
+    },
+    {
+      "query_id": 7,
+      "category": "constitutional_law",
+      "query": "What standard of review do district courts use when determining if an act of Congress is unconstitutional?",
+      "difficulty": "hard",
+      "expected_topics": [
+        "judicial review standards",
+        "presumption of constitutionality",
+        "district court deference",
+        "separation of powers"
+      ],
+      "relevant_case_ids": [8118121],
+      "ground_truth_case": "United States v. Lewis",
+      "expected_answer_points": [
+        "Determining constitutionality is grave and delicate duty",
+        "Presumption in favor of validity of Congressional acts",
+        "Only declare unconstitutional when free from reasonable doubt",
+        "District courts should exercise even greater restraint than appellate courts",
+        "Courts of limited jurisdiction should only challenge when unconstitutionality is glaring"
+      ],
+      "notes": "Detailed discussion of judicial restraint in constitutional review"
+    },
+    {
+      "query_id": 8,
+      "category": "criminal_law",
+      "query": "How is intent established in public indecency cases?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "criminal intent proof",
+        "circumstantial evidence",
+        "reckless conduct",
+        "inference of intent"
+      ],
+      "relevant_case_ids": [8118004],
+      "ground_truth_case": "Peyton v. District of Columbia",
+      "expected_answer_points": [
+        "Intent established by actions drawing attention to exposed condition",
+        "Display in public place presumes intent to be seen",
+        "Intent can be inferred from recklessness of conduct",
+        "Intent is question of fact"
+      ],
+      "notes": "Discusses methods of establishing intent in indecent exposure cases"
+    },
+    {
+      "query_id": 9,
+      "category": "property_law",
+      "query": "What happens to ownership rights in jointly titled property when one owner dies?",
+      "difficulty": "easy",
+      "expected_topics": [
+        "joint ownership",
+        "property rights",
+        "title registration",
+        "estate claims"
+      ],
+      "relevant_case_ids": [8118054],
+      "notes": "Branson v. Harris involves dispute over jointly owned automobile after death"
+    },
+    {
+      "query_id": 10,
+      "category": "civil_procedure",
+      "query": "Can an appellate court reverse a trial court's factual findings?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "appellate review standards",
+        "factual findings",
+        "weight of evidence",
+        "substantial evidence test"
+      ],
+      "relevant_case_ids": [8118004],
+      "ground_truth_case": "Peyton v. District of Columbia",
+      "expected_answer_points": [
+        "Appellate court may only set aside judgment on factual issue when plainly wrong",
+        "Must be without evidence to support finding",
+        "Substantial evidence standard applies",
+        "Intent is basically a question of fact"
+      ],
+      "notes": "Discusses appellate review of factual determinations"
+    },
+    {
+      "query_id": 11,
+      "category": "contract_law",
+      "query": "What elements must be proven to establish a valid contract?",
+      "difficulty": "easy",
+      "expected_topics": [
+        "contract formation",
+        "offer and acceptance",
+        "consideration",
+        "meeting of minds"
+      ],
+      "relevant_case_ids": [],
+      "notes": "General contract law question to test retrieval of relevant cases"
+    },
+    {
+      "query_id": 12,
+      "category": "tort_law",
+      "query": "What is required to prove negligence in a personal injury case?",
+      "difficulty": "easy",
+      "expected_topics": [
+        "negligence elements",
+        "duty of care",
+        "breach",
+        "causation",
+        "damages"
+      ],
+      "relevant_case_ids": [],
+      "notes": "General tort law question to test retrieval"
+    },
+    {
+      "query_id": 13,
+      "category": "criminal_law",
+      "query": "What is the difference between accidental and intentional conduct in criminal law?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "mens rea",
+        "criminal intent",
+        "accidental acts",
+        "intentional acts"
+      ],
+      "relevant_case_ids": [8118004],
+      "notes": "Peyton discusses intentional vs accidental exposure"
+    },
+    {
+      "query_id": 14,
+      "category": "civil_procedure",
+      "query": "What is the Federal Declaratory Judgments Act and which courts does it apply to?",
+      "difficulty": "easy",
+      "expected_topics": [
+        "Federal Declaratory Judgments Act",
+        "federal court jurisdiction",
+        "court definitions"
+      ],
+      "relevant_case_ids": [8118054],
+      "ground_truth_case": "Branson v. Harris",
+      "expected_answer_points": [
+        "28 U.S.C.A. § 2201",
+        "Confers jurisdiction on 'courts of the United States'",
+        "Defined as courts created by Congress with judges holding office during good behavior",
+        "Does not apply to Municipal Court"
+      ],
+      "notes": "Specific statutory interpretation question"
+    },
+    {
+      "query_id": 15,
+      "category": "constitutional_law",
+      "query": "Does registering for a wagering tax constitute self-incrimination?",
+      "difficulty": "hard",
+      "expected_topics": [
+        "Fifth Amendment privilege",
+        "self-incrimination",
+        "tax registration",
+        "future vs past acts"
+      ],
+      "relevant_case_ids": [8118121],
+      "ground_truth_case": "United States v. Lewis",
+      "expected_answer_points": [
+        "Registration for future acts is not self-incrimination",
+        "Privilege relates only to past acts, not future acts",
+        "Must register before entering business",
+        "Cannot claim privilege if failed to register"
+      ],
+      "notes": "Specific Fifth Amendment analysis"
+    },
+    {
+      "query_id": 16,
+      "category": "employment_law",
+      "query": "What are the requirements for workplace discrimination claims?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "discrimination",
+        "protected classes",
+        "adverse employment action",
+        "Title VII"
+      ],
+      "relevant_case_ids": [],
+      "notes": "Test query for cases that may not be in the dataset"
+    },
+    {
+      "query_id": 17,
+      "category": "family_law",
+      "query": "What factors do courts consider in child custody determinations?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "child custody",
+        "best interests of child",
+        "parental fitness"
+      ],
+      "relevant_case_ids": [],
+      "notes": "Test query for cases that may not be in the dataset"
+    },
+    {
+      "query_id": 18,
+      "category": "property_law",
+      "query": "How is ownership determined when title is registered in multiple names?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "joint ownership",
+        "title registration",
+        "contribution to purchase",
+        "ownership disputes"
+      ],
+      "relevant_case_ids": [8118054],
+      "ground_truth_case": "Branson v. Harris",
+      "notes": "Case involves automobile with title in both names and ownership dispute"
+    },
+    {
+      "query_id": 19,
+      "category": "criminal_law",
+      "query": "What makes a location a 'public place' for purposes of criminal statutes?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "public place definition",
+        "criminal elements",
+        "location requirements"
+      ],
+      "relevant_case_ids": [8118004],
+      "notes": "Peyton discusses public place element"
+    },
+    {
+      "query_id": 20,
+      "category": "civil_procedure",
+      "query": "Can parties claim relief they did not request in their complaint?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "prayer for relief",
+        "alternative relief",
+        "pleading requirements",
+        "Municipal Court rules"
+      ],
+      "relevant_case_ids": [8118054],
+      "ground_truth_case": "Branson v. Harris",
+      "expected_answer_points": [
+        "Municipal Court Rule 54(c) limits relief to what was requested",
+        "Party must request alternative relief from trial court",
+        "Cannot claim new relief for first time on appeal"
+      ],
+      "notes": "Discusses limitations on relief not requested below"
+    },
+    {
+      "query_id": 21,
+      "category": "evidence",
+      "query": "Can photographs be admitted as evidence to show the scene of a crime?",
+      "difficulty": "easy",
+      "expected_topics": [
+        "photographic evidence",
+        "demonstrative evidence",
+        "admissibility"
+      ],
+      "relevant_case_ids": [8118004],
+      "notes": "Peyton mentions photographs of scene introduced by defendant"
+    },
+    {
+      "query_id": 22,
+      "category": "constitutional_law",
+      "query": "What is the relationship between federal tax law and state gambling laws?",
+      "difficulty": "hard",
+      "expected_topics": [
+        "federal vs state law",
+        "tax requirements",
+        "gambling regulation"
+      ],
+      "relevant_case_ids": [8118121],
+      "notes": "United States v. Lewis discusses federal wagering tax and D.C. gambling laws"
+    },
+    {
+      "query_id": 23,
+      "category": "criminal_law",
+      "query": "What evidence standard applies to uphold a criminal conviction?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "substantial evidence",
+        "sufficiency of evidence",
+        "criminal conviction standards"
+      ],
+      "relevant_case_ids": [8118004],
+      "ground_truth_case": "Peyton v. District of Columbia",
+      "expected_answer_points": [
+        "Must be substantial evidence to support finding",
+        "Appellate court reviews whether finding against weight of evidence"
+      ],
+      "notes": "Discusses evidence standard for criminal convictions"
+    },
+    {
+      "query_id": 24,
+      "category": "civil_procedure",
+      "query": "What is the effect of a prior judgment on related claims?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "res judicata",
+        "collateral estoppel",
+        "prior judgments",
+        "claim preclusion"
+      ],
+      "relevant_case_ids": [8118054],
+      "notes": "Branson mentions prior replevin action and its effect on current case"
+    },
+    {
+      "query_id": 25,
+      "category": "constitutional_law",
+      "query": "How do courts determine if a statute is a tax or a penalty?",
+      "difficulty": "hard",
+      "expected_topics": [
+        "tax vs penalty",
+        "statutory interpretation",
+        "constitutional validity"
+      ],
+      "relevant_case_ids": [8118121],
+      "ground_truth_case": "United States v. Lewis",
+      "expected_answer_points": [
+        "Court must determine legislative purpose",
+        "Wagering act held to be tax, not penalty",
+        "Supreme Court in Kahriger validated as proper tax"
+      ],
+      "notes": "Discusses tax vs penalty distinction"
+    },
+    {
+      "query_id": 26,
+      "category": "appellate_procedure",
+      "query": "What issues can be raised for the first time on appeal?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "preservation of issues",
+        "appellate review",
+        "waiver",
+        "new arguments"
+      ],
+      "relevant_case_ids": [8118054],
+      "notes": "Branson discusses claims raised for first time on appeal"
+    },
+    {
+      "query_id": 27,
+      "category": "criminal_law",
+      "query": "Can a defendant's testimony be used against them on cross-examination?",
+      "difficulty": "easy",
+      "expected_topics": [
+        "cross-examination",
+        "defendant testimony",
+        "self-incrimination"
+      ],
+      "relevant_case_ids": [8118004],
+      "notes": "Peyton discusses defendant's testimony and cross-examination"
+    },
+    {
+      "query_id": 28,
+      "category": "constitutional_law",
+      "query": "What deference do lower courts owe to Supreme Court decisions?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "stare decisis",
+        "Supreme Court precedent",
+        "binding authority"
+      ],
+      "relevant_case_ids": [8118121],
+      "ground_truth_case": "United States v. Lewis",
+      "expected_answer_points": [
+        "Municipal Court cannot adopt different construction than Supreme Court",
+        "Supreme Court ruling in Kahriger is controlling",
+        "Lower courts must follow Supreme Court interpretation"
+      ],
+      "notes": "Discusses binding nature of Supreme Court precedent"
+    },
+    {
+      "query_id": 29,
+      "category": "evidence",
+      "query": "What is the proper use of prior conviction evidence?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "impeachment evidence",
+        "credibility",
+        "prior convictions",
+        "evidentiary limitations"
+      ],
+      "relevant_case_ids": [8118004],
+      "ground_truth_case": "Peyton v. District of Columbia",
+      "expected_answer_points": [
+        "Prior convictions admissible for credibility only",
+        "Cannot be used to determine guilt of current offense",
+        "Trial court must limit use to credibility question"
+      ],
+      "notes": "Clear rule on prior conviction evidence"
+    },
+    {
+      "query_id": 30,
+      "category": "civil_procedure",
+      "query": "What are the requirements for seeking alternative forms of relief?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "alternative relief",
+        "pleading amendments",
+        "prayer for relief"
+      ],
+      "relevant_case_ids": [8118054],
+      "notes": "Branson discusses seeking alternative relief when primary claim fails"
+    },
+    {
+      "query_id": 31,
+      "category": "criminal_law",
+      "query": "Is reckless conduct sufficient to prove criminal intent?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "recklessness",
+        "criminal intent",
+        "mens rea",
+        "proof of intent"
+      ],
+      "relevant_case_ids": [8118004],
+      "ground_truth_case": "Peyton v. District of Columbia",
+      "expected_answer_points": [
+        "Intent can be inferred from recklessness of conduct",
+        "Reckless exposure in public place supports finding of intent"
+      ],
+      "notes": "Discusses recklessness as evidence of intent"
+    },
+    {
+      "query_id": 32,
+      "category": "constitutional_law",
+      "query": "Can Congress require registration before engaging in otherwise legal activity?",
+      "difficulty": "hard",
+      "expected_topics": [
+        "regulatory power",
+        "Commerce Clause",
+        "registration requirements"
+      ],
+      "relevant_case_ids": [8118121],
+      "notes": "United States v. Lewis discusses required registration before accepting wagers"
+    },
+    {
+      "query_id": 33,
+      "category": "property_law",
+      "query": "What is the effect of an assignment of property interest?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "property assignments",
+        "transfer of interest",
+        "ownership claims"
+      ],
+      "relevant_case_ids": [8118054],
+      "notes": "Branson involves assignment of interest in automobile"
+    },
+    {
+      "query_id": 34,
+      "category": "appellate_procedure",
+      "query": "What is the standard for reversing a trial court's decision?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "appellate review standards",
+        "abuse of discretion",
+        "clearly erroneous"
+      ],
+      "relevant_case_ids": [8118004],
+      "notes": "Peyton discusses when appellate court can reverse"
+    },
+    {
+      "query_id": 35,
+      "category": "constitutional_law",
+      "query": "What is required to prove an act of Congress violates the Constitution?",
+      "difficulty": "hard",
+      "expected_topics": [
+        "constitutional challenges",
+        "burden of proof",
+        "presumption of validity"
+      ],
+      "relevant_case_ids": [8118121],
+      "ground_truth_case": "United States v. Lewis",
+      "expected_answer_points": [
+        "Must be free from reasonable doubt",
+        "Presumption in favor of Congressional acts",
+        "Plain mandate of Constitution must be violated",
+        "Higher burden for lower courts"
+      ],
+      "notes": "Detailed discussion of constitutional challenge requirements"
+    },
+    {
+      "query_id": 36,
+      "category": "criminal_law",
+      "query": "What is required to prove a crime was committed in a public place?",
+      "difficulty": "easy",
+      "expected_topics": [
+        "public place element",
+        "criminal venue",
+        "location proof"
+      ],
+      "relevant_case_ids": [8118004],
+      "notes": "Peyton involves crime in public place near river/golf course"
+    },
+    {
+      "query_id": 37,
+      "category": "evidence",
+      "query": "Can a defendant introduce evidence in their own defense and still be impeached?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "defendant testimony",
+        "impeachment",
+        "credibility"
+      ],
+      "relevant_case_ids": [8118004],
+      "notes": "Peyton - defendant testified and was cross-examined about prior convictions"
+    },
+    {
+      "query_id": 38,
+      "category": "constitutional_law",
+      "query": "Does the Fifth Amendment privilege against self-incrimination apply to regulatory schemes?",
+      "difficulty": "hard",
+      "expected_topics": [
+        "Fifth Amendment",
+        "regulatory compliance",
+        "required records doctrine"
+      ],
+      "relevant_case_ids": [8118121],
+      "notes": "United States v. Lewis discusses Fifth Amendment in context of wagering tax"
+    },
+    {
+      "query_id": 39,
+      "category": "civil_procedure",
+      "query": "What must a party prove to succeed in a declaratory judgment action?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "declaratory judgment requirements",
+        "actual controversy",
+        "justiciability"
+      ],
+      "relevant_case_ids": [8118054],
+      "notes": "Branson involves failed declaratory judgment action"
+    },
+    {
+      "query_id": 40,
+      "category": "criminal_law",
+      "query": "What weight is given to a defendant's denial of intent?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "defendant testimony",
+        "intent proof",
+        "credibility assessment"
+      ],
+      "relevant_case_ids": [8118004],
+      "ground_truth_case": "Peyton v. District of Columbia",
+      "notes": "Defendant denied intent but court found otherwise based on circumstances"
+    },
+    {
+      "query_id": 41,
+      "category": "appellate_procedure",
+      "query": "Can an appellate court consider issues not raised in the trial court?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "preservation of error",
+        "waiver",
+        "plain error"
+      ],
+      "relevant_case_ids": [8118054],
+      "notes": "Branson discusses raising new relief arguments on appeal"
+    },
+    {
+      "query_id": 42,
+      "category": "constitutional_law",
+      "query": "What is the significance of the Kahriger Supreme Court decision?",
+      "difficulty": "hard",
+      "expected_topics": [
+        "wagering tax",
+        "constitutional law",
+        "Supreme Court precedent"
+      ],
+      "relevant_case_ids": [8118121],
+      "ground_truth_case": "United States v. Lewis",
+      "expected_answer_points": [
+        "Upheld constitutionality of wagering tax act",
+        "Held registration required before entering business",
+        "No Fifth Amendment violation",
+        "Tax not penalty in disguise"
+      ],
+      "notes": "Multiple references to Kahriger as controlling precedent"
+    },
+    {
+      "query_id": 43,
+      "category": "evidence",
+      "query": "What types of evidence can establish criminal intent?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "circumstantial evidence",
+        "intent proof",
+        "inference from conduct"
+      ],
+      "relevant_case_ids": [8118004],
+      "notes": "Peyton discusses various ways intent can be shown"
+    },
+    {
+      "query_id": 44,
+      "category": "property_law",
+      "query": "What happens when there is a dispute over jointly owned property after one owner's death?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "joint ownership",
+        "estate claims",
+        "property disputes"
+      ],
+      "relevant_case_ids": [8118054],
+      "notes": "Core issue in Branson v. Harris"
+    },
+    {
+      "query_id": 45,
+      "category": "civil_procedure",
+      "query": "What remedies are available when a court lacks subject matter jurisdiction?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "subject matter jurisdiction",
+        "dismissal",
+        "transfer"
+      ],
+      "relevant_case_ids": [8118054],
+      "ground_truth_case": "Branson v. Harris",
+      "expected_answer_points": [
+        "Court must dismiss if it lacks jurisdiction",
+        "Cannot grant any relief beyond jurisdiction",
+        "Party may need to refile in proper court"
+      ],
+      "notes": "Discusses consequences of lack of jurisdiction"
+    },
+    {
+      "query_id": 46,
+      "category": "constitutional_law",
+      "query": "What role do district courts play in determining constitutionality of federal statutes?",
+      "difficulty": "hard",
+      "expected_topics": [
+        "judicial review",
+        "district court authority",
+        "constitutional interpretation"
+      ],
+      "relevant_case_ids": [8118121],
+      "ground_truth_case": "United States v. Lewis",
+      "expected_answer_points": [
+        "District courts should exercise great restraint",
+        "Should not strike down acts unless plainly unconstitutional",
+        "Uniformity concerns counsel against hasty invalidation",
+        "Courts of limited jurisdiction should be even more cautious"
+      ],
+      "notes": "Extended discussion of judicial restraint"
+    },
+    {
+      "query_id": 47,
+      "category": "criminal_law",
+      "query": "How is the public nature of a location established for criminal purposes?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "public vs private spaces",
+        "criminal elements",
+        "venue"
+      ],
+      "relevant_case_ids": [8118004],
+      "notes": "Peyton - crime occurred in car parked on public road near golf course"
+    },
+    {
+      "query_id": 48,
+      "category": "evidence",
+      "query": "What is the standard for determining witness credibility?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "credibility assessment",
+        "fact-finding",
+        "witness impeachment"
+      ],
+      "relevant_case_ids": [8118004],
+      "notes": "Trial court assessed credibility of defendant's testimony"
+    },
+    {
+      "query_id": 49,
+      "category": "appellate_procedure",
+      "query": "What must an appellant show to prevail on appeal?",
+      "difficulty": "medium",
+      "expected_topics": [
+        "appellate standards",
+        "burden on appeal",
+        "error preservation"
+      ],
+      "relevant_case_ids": [8118004, 8118054],
+      "notes": "Both Peyton and Branson discuss appellate review"
+    },
+    {
+      "query_id": 50,
+      "category": "constitutional_law",
+      "query": "Can a tax statute be challenged as unconstitutional if it has been upheld by multiple courts?",
+      "difficulty": "hard",
+      "expected_topics": [
+        "stare decisis",
+        "constitutional challenges",
+        "precedential value"
+      ],
+      "relevant_case_ids": [8118121],
+      "ground_truth_case": "United States v. Lewis",
+      "expected_answer_points": [
+        "Strong precedent from multiple courts weighs heavily",
+        "Supreme Court decision is controlling",
+        "Lower court should not strike down act upheld by Supreme Court",
+        "Six other district courts upheld same act"
+      ],
+      "notes": "Discusses weight of precedent in constitutional challenges"
+    }
+  ],
+  "evaluation_metrics": {
+    "retrieval_metrics": [
+      {
+        "name": "Precision@5",
+        "description": "Percentage of top 5 retrieved cases that are relevant",
+        "calculation": "relevant_in_top_5 / 5"
+      },
+      {
+        "name": "Recall@5",
+        "description": "Percentage of all relevant cases retrieved in top 5",
+        "calculation": "relevant_in_top_5 / total_relevant_cases"
+      },
+      {
+        "name": "MRR (Mean Reciprocal Rank)",
+        "description": "Average of 1/rank of first relevant result",
+        "calculation": "1 / rank_of_first_relevant"
+      },
+      {
+        "name": "NDCG@5",
+        "description": "Normalized Discounted Cumulative Gain at 5",
+        "calculation": "DCG@5 / IDCG@5"
+      }
+    ],
+    "answer_quality_metrics": [
+      {
+        "name": "Faithfulness",
+        "description": "Does answer cite only information from retrieved sources?",
+        "scale": "0-1 (binary or human rating)"
+      },
+      {
+        "name": "Relevance",
+        "description": "Does answer address the question asked?",
+        "scale": "1-5 (human rating)"
+      },
+      {
+        "name": "Completeness",
+        "description": "Does answer cover all expected points?",
+        "scale": "0-1 (expected_points_covered / total_expected_points)"
+      },
+      {
+        "name": "Citation Accuracy",
+        "description": "Are all citations verifiable in retrieved cases?",
+        "scale": "0-1 (correct_citations / total_citations)"
+      }
+    ],
+    "performance_metrics": [
+      {
+        "name": "Query Latency",
+        "description": "Total time from query to response",
+        "unit": "seconds",
+        "target": "< 6 seconds"
+      },
+      {
+        "name": "Embedding Time",
+        "description": "Time to generate query embedding",
+        "unit": "milliseconds",
+        "target": "< 200ms"
+      },
+      {
+        "name": "Search Time",
+        "description": "Time for Pinecone vector search",
+        "unit": "milliseconds",
+        "target": "< 300ms"
+      },
+      {
+        "name": "LLM Generation Time",
+        "description": "Time for Claude to generate answer",
+        "unit": "seconds",
+        "target": "< 5 seconds"
+      }
+    ],
+    "cost_metrics": [
+      {
+        "name": "Cost per Query",
+        "description": "Total API cost per query",
+        "unit": "USD",
+        "target": "< $0.02"
+      },
+      {
+        "name": "Embedding Cost",
+        "description": "OpenAI embedding cost per query",
+        "unit": "USD"
+      },
+      {
+        "name": "LLM Cost",
+        "description": "Claude generation cost per query",
+        "unit": "USD"
+      }
+    ]
+  },
+  "usage_instructions": {
+    "loading": "import json; data = json.load(open('evaluation_dataset.json'))",
+    "running_evaluation": "See evaluate_rag.py script for automated evaluation",
+    "adding_queries": "Add new queries to test_queries array with all required fields",
+    "updating_ground_truth": "After running system, update relevant_case_ids with actual retrieved cases for future benchmarking"
+  }
+}
