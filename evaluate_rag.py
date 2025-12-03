@@ -212,8 +212,7 @@ class RAGEvaluator:
         query_text = query_obj["query"]
         query_id = query_obj["query_id"]
 
-        print(f"
-Query {query_id}: {query_text[:80]}...")
+        print(f"Query {query_id}: {query_text[:80]}...")
 
         # Time the complete query
         start_time = time.time()
