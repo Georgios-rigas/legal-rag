@@ -14,6 +14,7 @@ import boto3
 import config
 import io
 import json
+import os
 
 app = FastAPI(
     title="Legal RAG API",
@@ -132,6 +133,60 @@ async def stats():
     }
 
 
+@app.get("/api/case/{case_id}")
+async def get_case_content(case_id: int):
+    """
+    Get case content as JSON for viewing in browser.
+
+    Args:
+        case_id: The CAP case ID
+
+    Returns:
+        JSON with case details and content
+    """
+    try:
+        # Look up S3 key from mapping
+        s3_key = case_id_to_s3.get(str(case_id))
+
+        if not s3_key:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Case file not found for case_id {case_id}"
+            )
+
+        # Fetch the JSON file from S3
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+            aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
+        )
+        response = s3_client.get_object(Bucket=config.BUCKET_NAME, Key=s3_key)
+        case_data = json.loads(response['Body'].read())
+
+        # Return case data as JSON
+        return {
+            "case_id": case_id,
+            "name": case_data.get('name', 'Unknown Case'),
+            "name_abbreviation": case_data.get('name_abbreviation', ''),
+            "citation": case_data.get('citations', [{}])[0].get('cite', 'N/A') if case_data.get('citations') else 'N/A',
+            "court": case_data.get('court', {}).get('name', 'Unknown Court'),
+            "decision_date": case_data.get('decision_date', 'Unknown Date'),
+            "docket_number": case_data.get('docket_number', 'N/A'),
+            "opinions": case_data.get('casebody', {}).get('data', {}).get('opinions', []),
+            "attorneys": case_data.get('casebody', {}).get('data', {}).get('attorneys', []),
+            "judges": case_data.get('casebody', {}).get('data', {}).get('judges', []),
+            "parties": case_data.get('casebody', {}).get('data', {}).get('parties', []),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch case content: {str(e)}"
+        )
+
+
 @app.get("/api/download/{case_id}")
 async def download_case_pdf(case_id: int):
     """
@@ -154,7 +209,11 @@ async def download_case_pdf(case_id: int):
             )
 
         # Fetch the JSON file from S3
-        s3_client = boto3.client('s3')
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+            aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
+        )
         response = s3_client.get_object(Bucket=config.BUCKET_NAME, Key=s3_key)
         case_data = json.loads(response['Body'].read())
 

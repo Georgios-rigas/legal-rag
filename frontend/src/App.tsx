@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
-import { Send, Scale, Loader2, BookOpen, AlertCircle, Copy, Check, Trash2, Download } from 'lucide-react'
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom'
+import { Send, Scale, Loader2, BookOpen, AlertCircle, Copy, Check, Trash2, Eye } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import axios from 'axios'
 import { Spotlight } from './components/ui/spotlight'
 import { Highlight } from './components/ui/hero-highlight'
 import { BackgroundGradient } from './components/ui/background-gradient'
 import { motion } from 'framer-motion'
+import CaseViewer from './CaseViewer'
 import './App.css'
 
 interface Source {
@@ -34,7 +36,8 @@ interface Message {
 
 const API_BASE_URL = 'http://20.50.147.24'
 
-function App() {
+function ChatInterface() {
+  const navigate = useNavigate()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -323,11 +326,11 @@ function App() {
                                         {(source.score * 100).toFixed(1)}%
                                       </div>
                                       <button
-                                        onClick={() => window.open(`${API_BASE_URL}/api/download/${source.case_id}`, '_blank')}
+                                        onClick={() => navigate(`/case/${source.case_id}`)}
                                         className="p-2 hover:bg-slate-800 rounded text-gray-400 hover:text-white transition-colors"
-                                        title="Download case file"
+                                        title="View case details"
                                       >
-                                        <Download className="w-4 h-4" />
+                                        <Eye className="w-4 h-4" />
                                       </button>
                                     </div>
                                   </div>
@@ -424,6 +427,17 @@ function App() {
         </div>
       </div>
     </div>
+  )
+}
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<ChatInterface />} />
+        <Route path="/case/:caseId" element={<CaseViewer />} />
+      </Routes>
+    </Router>
   )
 }
 
