@@ -4,8 +4,8 @@ Configuration for Legal RAG System
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Load environment variables (override system env vars)
+load_dotenv(override=True)
 
 # Pinecone Settings
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
