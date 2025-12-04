@@ -46,6 +46,10 @@ spec:
             secretKeyRef:
               name: legal-rag-secrets
               key: AWS_SECRET_ACCESS_KEY
+        - name: BUCKET_NAME
+          value: "test-bucket-gr7"
+        - name: TARGET_FOLDER
+          value: "raw_legal_cases"
         resources:
           requests:
             memory: "512Mi"
