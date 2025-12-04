@@ -14,7 +14,6 @@ import boto3
 import config
 import io
 import json
-import os
 
 app = FastAPI(
     title="Legal RAG API",
@@ -155,11 +154,7 @@ async def get_case_content(case_id: int):
             )
 
         # Fetch the JSON file from S3
-        s3_client = boto3.client(
-            's3',
-            aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-            aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
-        )
+        s3_client = boto3.client('s3')
         response = s3_client.get_object(Bucket=config.BUCKET_NAME, Key=s3_key)
         case_data = json.loads(response['Body'].read())
 
@@ -209,11 +204,7 @@ async def download_case_pdf(case_id: int):
             )
 
         # Fetch the JSON file from S3
-        s3_client = boto3.client(
-            's3',
-            aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-            aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
-        )
+        s3_client = boto3.client('s3')
         response = s3_client.get_object(Bucket=config.BUCKET_NAME, Key=s3_key)
         case_data = json.loads(response['Body'].read())
 
