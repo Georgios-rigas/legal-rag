@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
       - name: api
-        image: legalragpersonalacr.azurecr.io/legal-rag-api:v1
+        image: legalragpersonalacr.azurecr.io/legal-rag-api:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000
         env:
