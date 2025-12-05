@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, Calendar, Scale, FileText, Users } from 'lucide-react';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://20.50.147.24';
+const API_BASE_URL = 'http://localhost:8000';
 
 interface Opinion {
   author?: string;
@@ -58,7 +58,7 @@ export default function CaseViewer() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+      <div className="min-h-screen bg-gradient-to-br from-[#0a1929] via-[#0d2438] to-[#0a1929]">
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-96">
             <div className="text-center">
@@ -73,7 +73,7 @@ export default function CaseViewer() {
 
   if (error || !caseData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+      <div className="min-h-screen bg-gradient-to-br from-[#0a1929] via-[#0d2438] to-[#0a1929]">
         <div className="max-w-6xl mx-auto px-4 py-8">
           <button
             onClick={() => navigate('/')}
@@ -91,7 +91,7 @@ export default function CaseViewer() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-[#0a1929] via-[#0d2438] to-[#0a1929]">
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">

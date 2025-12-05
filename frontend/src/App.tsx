@@ -6,6 +6,7 @@ import axios from 'axios'
 import { Spotlight } from './components/ui/spotlight'
 import { Highlight } from './components/ui/hero-highlight'
 import { BackgroundGradient } from './components/ui/background-gradient'
+import { GeminiParticles } from './components/ui/gemini-particles'
 import { motion } from 'framer-motion'
 import CaseViewer from './CaseViewer'
 import './App.css'
@@ -34,7 +35,7 @@ interface Message {
   timestamp: Date
 }
 
-const API_BASE_URL = 'http://20.50.147.24'
+const API_BASE_URL = 'http://localhost:8000'
 
 function ChatInterface() {
   const navigate = useNavigate()
@@ -142,37 +143,45 @@ function ChatInterface() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col dark relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-[#0a1929] via-[#0d2438] to-[#0a1929] flex flex-col dark relative overflow-hidden">
       {/* Spotlight Effects */}
       <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="white" />
 
       {/* Header */}
-      <header className="bg-slate-900/30 backdrop-blur-md border-b border-slate-800/50 sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-4 py-4">
+      <header className="bg-slate-950/95 backdrop-blur-md border-b border-slate-800/50 sticky top-0 z-30 relative overflow-hidden">
+        {/* Gemini Particles Background */}
+        <div className="absolute inset-0 w-full h-full">
+          <GeminiParticles
+            particleCount={200}
+            colors={["#4285F4", "#0ea5e9", "#38bdf8", "#7dd3fc"]}
+          />
+        </div>
+
+        <div className="max-w-6xl mx-auto px-4 py-12 relative z-10">
           <div className="flex items-center justify-between">
-            <motion.div
-              className="flex items-center gap-3"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <BackgroundGradient className="rounded-lg p-0.5">
-                <div className="bg-slate-950 p-2 rounded-lg">
-                  <Scale className="w-6 h-6 text-blue-400" />
-                </div>
-              </BackgroundGradient>
-              <div>
-                <h1 className="text-xl font-bold text-white">
-                  Legal <Highlight className="text-white">RAG</Highlight> Assistant
-                </h1>
-                <p className="text-sm text-gray-400">AI-Powered Legal Research</p>
-              </div>
-            </motion.div>
+            {/* Centered Subtitle Only */}
+            <div className="flex-1 flex justify-center">
+              <motion.div
+                className="flex items-center gap-2"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+              >
+                <div className="h-px w-8 bg-gradient-to-r from-transparent via-blue-400 to-transparent" />
+                <p className="text-sm text-gray-300 font-medium tracking-wide">Real-time AI Legal Research Engine</p>
+                <div className="h-px w-8 bg-gradient-to-r from-transparent via-blue-400 to-transparent" />
+              </motion.div>
+            </div>
+
+            {/* Clear Button - Absolute positioned to right */}
             {messages.length > 0 && (
               <motion.button
                 onClick={clearChat}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 hover:bg-slate-700/50 rounded-lg text-gray-300 hover:text-white transition-all border border-slate-700/50"
+                className="absolute right-4 flex items-center gap-2 px-4 py-2 bg-slate-800/50 hover:bg-slate-700/50 rounded-lg text-gray-300 hover:text-white transition-all border border-slate-700/50"
                 title="Clear chat"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -213,18 +222,7 @@ function ChatInterface() {
                 </span>
               </motion.h2>
 
-              <motion.p
-                className="text-gray-400 mb-12 max-w-2xl mx-auto text-lg"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.8 }}
-              >
-                Ask questions about legal cases and get AI-powered answers backed by actual case law.
-                <br />
-                <span className="text-blue-400 font-semibold">Powered by Claude Sonnet 4.5</span> and{' '}
-                <span className="text-purple-400 font-semibold">1,671 legal cases</span>.
-              </motion.p>
-
+            
               <div className="grid gap-4 max-w-2xl mx-auto">
                 <p className="text-sm text-gray-500 font-semibold uppercase tracking-wide mb-2">
                   Example Questions
@@ -268,7 +266,7 @@ function ChatInterface() {
                   <div
                     className={`max-w-3xl ${
                       message.type === 'user'
-                        ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl rounded-tr-sm shadow-lg shadow-blue-500/20'
+                        ? 'bg-slate-700/90 text-white rounded-2xl rounded-tr-sm shadow-lg border border-slate-600/50 backdrop-blur-sm'
                         : 'bg-slate-900/80 text-gray-200 rounded-2xl rounded-tl-sm border border-slate-800/50 backdrop-blur-sm'
                     } px-6 py-4 relative group`}
                   >
