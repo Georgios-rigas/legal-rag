@@ -49,7 +49,7 @@ class LegalDocProcessor:
         # Remove multiple spaces
         text = re.sub(r'\s+', ' ', text)
         return text.strip()
-
+    
     def process_case(self, s3_key: str):
         """The Main Pipeline Logic"""
         

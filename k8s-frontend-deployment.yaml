@@ -5,7 +5,7 @@ metadata:
   labels:
     app: legal-rag-frontend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: legal-rag-frontend
@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: legalragacr.azurecr.io/legal-rag-frontend:v1
+        image: legalragpersonalacr.azurecr.io/legal-rag-frontend:v1
         ports:
         - containerPort: 80
         resources:
@@ -38,8 +38,6 @@ spec:
             port: 80
           initialDelaySeconds: 15
           periodSeconds: 10
-      imagePullSecrets:
-      - name: acr-secret
 ---
 apiVersion: v1
 kind: Service

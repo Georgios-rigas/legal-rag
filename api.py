@@ -167,7 +167,7 @@ async def get_case_content(case_id: int):
             "court": case_data.get('court', {}).get('name', 'Unknown Court'),
             "decision_date": case_data.get('decision_date', 'Unknown Date'),
             "docket_number": case_data.get('docket_number', 'N/A'),
-            "opinions": case_data.get('casebody', {}).get('data', {}).get('opinions', []),
+            "opinions": case_data.get('casebody', {}).get('opinions', []),
             "attorneys": case_data.get('casebody', {}).get('data', {}).get('attorneys', []),
             "judges": case_data.get('casebody', {}).get('data', {}).get('judges', []),
             "parties": case_data.get('casebody', {}).get('data', {}).get('parties', []),

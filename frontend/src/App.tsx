@@ -4,7 +4,6 @@ import { Send, Scale, Loader2, BookOpen, AlertCircle, Copy, Check, Trash2, Eye }
 import ReactMarkdown from 'react-markdown'
 import axios from 'axios'
 import { Spotlight } from './components/ui/spotlight'
-import { Highlight } from './components/ui/hero-highlight'
 import { BackgroundGradient } from './components/ui/background-gradient'
 import { GeminiParticles } from './components/ui/gemini-particles'
 import { motion } from 'framer-motion'

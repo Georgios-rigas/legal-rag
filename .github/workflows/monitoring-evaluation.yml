@@ -1,0 +1,63 @@
+name: Production Monitoring - Evaluation
+
+on:
+  schedule:
+    # Run every day at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  RESULTS_DIR: monitoring_results
+
+jobs:
+  evaluate-production:
+    runs-on: self-hosted
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      shell: powershell
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run full evaluation
+      shell: powershell
+      env:
+        PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        EMBEDDING_PROVIDER: openai
+      run: |
+        $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+        python evaluate_rag.py --output "monitoring_eval_$timestamp.json"
+
+    - name: Check for regressions
+      shell: powershell
+      run: |
+        # This will print warnings but NOT fail the pipeline
+        # Just for monitoring/alerting purposes
+        python scripts/check_quality_gates.py monitoring_eval_*.json
+      continue-on-error: true
+
+    - name: Upload monitoring results
+      uses: actions/upload-artifact@v3
+      with:
+        name: monitoring-results-${{ github.run_number }}
+        path: monitoring_eval_*.json
+        retention-days: 90
+
+    - name: Send notification on failure
+      if: failure()
+      shell: powershell
+      run: |
+        Write-Host "⚠️ ALERT: Production evaluation failed or quality degraded!"
+        Write-Host "Check artifacts for detailed results."
+        # TODO: Add Slack/email notification here
