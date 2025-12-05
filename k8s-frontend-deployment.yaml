@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: legalragpersonalacr.azurecr.io/legal-rag-frontend:v1
+        image: legalragpersonalacr.azurecr.io/legal-rag-frontend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80
